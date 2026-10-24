@@ -23,13 +23,13 @@ export default function AdminNavbar({ onMenuClick }) {
   useClickOutside(notifRef, () => setNotifOpen(false))
 
   const name = user?.name || "Admin User"
-  const email = user?.email || "admin@ovistays.com"
+  const email = user?.email || ""
   const initials = name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2)
 
   const handleLogout = () => {
     clearAuth()
     toast.success("Logged out")
-    navigate("/admin")
+    navigate("/admin/login")
   }
 
   return (
