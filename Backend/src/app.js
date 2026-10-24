@@ -18,9 +18,23 @@ if (env.nodeEnv !== 'test') app.use(morgan('dev'))
 app.use('/api', routes)
 
 app.use((req, res) => res.status(404).json({ success: false, message: 'Not found' }))
+
+// Turns thrown errors into JSON: validation -> 400, duplicate key -> 409, HttpError -> its own status
 app.use((err, req, res, next) => {
-  console.error(err)
-  res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' })
+  if (err.name === 'ValidationError') {
+    const message = Object.values(err.errors).map((e) => e.message).join(', ')
+    return res.status(400).json({ success: false, message })
+  }
+  if (err.name === 'CastError') {
+    return res.status(400).json({ success: false, message: `Invalid value for ${err.path}` })
+  }
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || {})[0] || 'value'
+    return res.status(409).json({ success: false, message: `${field} already exists` })
+  }
+  const status = err.status || 500
+  if (status >= 500) console.error(err)
+  res.status(status).json({ success: false, message: status >= 500 ? 'Server error' : err.message })
 })
 
 export default app

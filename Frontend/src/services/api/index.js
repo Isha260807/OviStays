@@ -1,1 +1,1 @@
-export { default as api } from './axios.js'
+export { default as api, errorMessage } from './axios.js'
