@@ -68,11 +68,40 @@ export const adminSidebarMenu = [
   },
   {
     type: "section",
+    label: "REPORT MANAGEMENT",
+    items: [
+      { type: "link", label: "Daily Sales & Cash Audit", path: "/admin/reports/daily-sales", icon: "Receipt" },
+      { type: "link", label: "Transaction Report", path: "/admin/reports/transactions", icon: "FileText" },
+      { type: "link", label: "Booking Report", path: "/admin/reports/bookings", icon: "ClipboardList" },
+      { type: "link", label: "Tax Report", path: "/admin/reports/tax", icon: "Receipt" },
+      { type: "link", label: "Admin Earning Report", path: "/admin/reports/admin-earnings", icon: "TrendingUp" },
+      { type: "link", label: "Cancellation & Refunds", path: "/admin/reports/cancellations", icon: "XCircle" },
+      {
+        type: "expandable",
+        label: "Hotel Report",
+        icon: "Building2",
+        subItems: [
+          { label: "Hotel Performance", path: "/admin/reports/hotels" },
+          { label: "Hotel Payouts", path: "/admin/reports/hotel-payouts" },
+        ],
+      },
+      {
+        type: "expandable",
+        label: "Customer Report",
+        icon: "Users",
+        subItems: [
+          { label: "Top Customers", path: "/admin/reports/customers" },
+          { label: "Guest Feedback", path: "/admin/reports/feedback" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "section",
     label: "TRANSACTION MANAGEMENT",
     items: [
       { type: "link", label: "Payments", path: "/admin/payments", icon: "CreditCard" },
       { type: "link", label: "Hotel Payouts", path: "/admin/payouts", icon: "Wallet" },
-      { type: "link", label: "Reports", path: "/admin/reports", icon: "FileText" },
     ],
   },
   {

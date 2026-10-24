@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom"
 import {
   Search, X, ChevronDown, ChevronRight, ChevronLeft, LayoutDashboard, CalendarCheck,
   Building2, BedDouble, MapPin, Users, Star, Gift, Image, Bell, CreditCard, Wallet,
-  FileText, MessageSquare, Mail, Settings, UserCog, User, Hotel, Database, Code, Image as ImageIcon, Globe, Lock, Receipt, XCircle, Share2, ToggleLeft,
+  FileText, MessageSquare, Mail, Settings, UserCog, User, Hotel, Database, Code, Image as ImageIcon, Globe, Lock, Receipt, XCircle, Share2, ToggleLeft, ClipboardList, TrendingUp,
 } from "lucide-react"
 import { useAuthStore } from "@/core/auth/auth.store.js"
 import { useBranding } from "@/core/settings/branding.store.js"
@@ -13,7 +13,7 @@ import { adminSidebarMenu } from "../constants/adminSidebarMenu.js"
 
 const iconMap = {
   LayoutDashboard, CalendarCheck, Building2, BedDouble, MapPin, Users, Star, Gift, Image,
-  Bell, CreditCard, Wallet, FileText, MessageSquare, Mail, Settings, UserCog, User, Database, Code, ImageIcon, Globe, Lock, Receipt, XCircle, Share2, ToggleLeft,
+  Bell, CreditCard, Wallet, FileText, MessageSquare, Mail, Settings, UserCog, User, Database, Code, ImageIcon, Globe, Lock, Receipt, XCircle, Share2, ToggleLeft, ClipboardList, TrendingUp,
 }
 
 const STORAGE_KEY = "admin_sidebar_state"

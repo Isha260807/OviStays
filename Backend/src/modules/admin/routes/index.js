@@ -6,7 +6,7 @@ import { resources } from '../services/resources.config.js'
 import * as auth from '../controllers/auth.controller.js'
 import * as settings from '../controllers/settings.controller.js'
 import { getDashboardStats } from '../controllers/dashboard.controller.js'
-import { listReports } from '../controllers/reports.controller.js'
+import * as reports from '../controllers/reports.controller.js'
 import * as broadcast from '../controllers/broadcast.controller.js'
 import * as pages from '../controllers/pages.controller.js'
 import * as dev from '../controllers/developer.controller.js'
@@ -30,7 +30,17 @@ router.get('/settings', settings.getSettings)
 router.put('/settings', settings.updateSettings)
 router.get('/settings/toggles', settings.getToggles)
 router.patch('/settings/toggles', settings.updateToggles)
-router.get('/reports', listReports)
+router.get('/reports/daily-sales', reports.dailySales)
+router.get('/reports/transactions', reports.transactions)
+router.get('/reports/bookings', reports.bookings)
+router.get('/reports/tax', reports.tax)
+router.get('/reports/tax/:hotelId', reports.taxDetail)
+router.get('/reports/admin-earnings', reports.adminEarnings)
+router.get('/reports/cancellations', reports.cancellations)
+router.get('/reports/hotels', reports.hotelPerformance)
+router.get('/reports/hotel-payouts', reports.hotelPayouts)
+router.get('/reports/customers', reports.topCustomers)
+router.get('/reports/feedback', reports.feedback)
 router.get('/broadcasts/recipients', broadcast.recipients)
 router.get('/broadcasts', broadcast.list)
 router.post('/broadcasts', broadcast.create)

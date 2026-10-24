@@ -11,6 +11,9 @@ import AboutUs from "./pages/content/AboutUs.jsx"
 import SocialMedia from "./pages/content/SocialMedia.jsx"
 import BroadcastNotification from "./pages/settings/BroadcastNotification.jsx"
 import ToggleManagement from "./pages/settings/ToggleManagement.jsx"
+import ReportPage from "./components/reports/ReportPage.jsx"
+import DailySales from "./pages/reports/DailySales.jsx"
+import { reportConfigs } from "./pages/reports/reportConfigs.jsx"
 import EnvManagements from "./pages/developer/EnvManagements.jsx"
 import ImageSetting from "./pages/developer/ImageSetting.jsx"
 import DeveloperSettings from "./pages/developer/DeveloperSettings.jsx"
@@ -35,6 +38,11 @@ export default function AdminRoutes() {
         <Route element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="settings" element={<BusinessSetup />} />
+          <Route path="reports/daily-sales" element={<DailySales />} />
+          {Object.entries(reportConfigs).map(([path, config]) => (
+            <Route key={path} path={`reports/${path}`} element={<ReportPage key={path} config={config} />} />
+          ))}
+          <Route path="reports" element={<Navigate to="/admin/reports/transactions" replace />} />
           <Route path="broadcast-notification" element={<BroadcastNotification />} />
           <Route path="toggle-management" element={<ToggleManagement />} />
           <Route path="pages-social-media/about" element={<AboutUs />} />

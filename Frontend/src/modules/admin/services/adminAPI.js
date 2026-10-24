@@ -12,6 +12,9 @@ export const adminAPI = {
   getSettings: () => api.get('/admin/settings').then(data),
   saveSettings: (body) => api.put('/admin/settings', body).then(data),
 
+  // Reports: path is e.g. "transactions" or "tax/<hotelId>"
+  report: (path, params) => api.get(`/admin/reports/${path}`, { params }).then(data),
+
   // Broadcast notifications
   listBroadcasts: (params) => api.get('/admin/broadcasts', { params }).then(data),
   createBroadcast: (body) => api.post('/admin/broadcasts', body).then(data),

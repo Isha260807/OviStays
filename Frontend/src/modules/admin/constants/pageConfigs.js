@@ -146,12 +146,6 @@ export const listConfigs = {
       { name: "amount", label: "Amount", type: "number", required: true },
     ],
   },
-  reports: {
-    title: "Reports", subtitle: "Live summaries calculated from current data", endpoint: "reports",
-    columns: [t("name", "Report"), t("type", "Type"), t("records", "Records"), t("value", "Value", "money"), t("generatedOn", "Generated on")],
-    deletable: false,
-  },
-
   "support-tickets": {
     title: "Support Tickets", subtitle: "Issues raised by guests and hotels", endpoint: "support-tickets",
     columns: [ID, t("subject", "Subject"), t("raisedBy", "Raised by"), t("priority", "Priority"), STATUS],

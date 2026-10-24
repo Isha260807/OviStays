@@ -79,10 +79,10 @@ for (let i = 0; i < 60; i++) {
   }))
 }
 
-const methods = ['UPI', 'Card', 'Net Banking', 'Wallet']
+const methods = ['UPI', 'Card', 'Net Banking', 'Wallet', 'Cash']
 for (const [i, b] of bookings.entries()) {
   const status = b.status === 'Refunded' ? 'Refunded' : b.status === 'Pending' ? 'Pending' : b.status === 'Cancelled' ? 'Failed' : 'Paid'
-  await Payment.create({ booking: b._id, bookingCode: b.refId, guestName: b.guestName, method: pick(methods, i), amount: b.amount, status })
+  await Payment.create({ booking: b._id, bookingCode: b.refId, guestName: b.guestName, method: pick(methods, i), amount: b.amount, status, createdAt: b.createdAt })
 }
 
 for (const [i, hotel] of activeHotels.entries()) {
