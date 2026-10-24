@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@admin/*": ["./src/modules/admin/*"],
+      "@user/*": ["./src/modules/user/*"],
+      "@hotel/*": ["./src/modules/hotel/*"]
+    }
+  },
+  "include": ["src"]
+}

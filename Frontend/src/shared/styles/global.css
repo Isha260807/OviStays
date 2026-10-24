@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Admin panel: AdminLayout adds "admin-compact" to <html> to scale text down.
+   One knob: --admin-text-scale (1 = original size). */
+html.admin-compact {
+  --admin-text-scale: 0.9;
+
+  --text-xs: calc(0.75rem * var(--admin-text-scale));
+  --text-sm: calc(0.875rem * var(--admin-text-scale));
+  --text-base: calc(1rem * var(--admin-text-scale));
+  --text-lg: calc(1.125rem * var(--admin-text-scale));
+  --text-xl: calc(1.25rem * var(--admin-text-scale));
+  --text-2xl: calc(1.5rem * var(--admin-text-scale));
+  --text-3xl: calc(1.875rem * var(--admin-text-scale));
+  --text-4xl: calc(2.25rem * var(--admin-text-scale));
+}
+
+html.admin-compact body {
+  font-size: calc(1rem * var(--admin-text-scale));
+}
