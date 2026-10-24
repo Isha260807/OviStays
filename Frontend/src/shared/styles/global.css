@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #e52e2e;
+}
+
 /* Admin panel: AdminLayout adds "admin-compact" to <html> to scale text down.
    One knob: --admin-text-scale (1 = original size). */
 html.admin-compact {
