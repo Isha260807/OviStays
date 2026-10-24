@@ -1,17 +1,56 @@
 import mongoose from 'mongoose'
+import { IMAGE_PATH_PATTERN, IMAGE_PATH_MESSAGE } from '../utils/uploadPaths.js'
 
-// Single document holding platform-wide business settings.
+// A stored file: `url` is a relative /uploads path or an https URL; `publicId` is set for Cloudinary files.
+const imageField = {
+  url: { type: String, trim: true, default: '', match: [IMAGE_PATH_PATTERN, IMAGE_PATH_MESSAGE] },
+  publicId: { type: String, default: '' },
+}
+const FILE_PATH_PATTERN = /^(\/uploads\/[\w.-]+\.pdf|https:\/\/\S+)$/
+const fileField = {
+  url: { type: String, trim: true, default: '', match: [FILE_PATH_PATTERN, 'Document must be an uploaded PDF or an https URL'] },
+  publicId: { type: String, default: '' },
+}
+
+// Single document holding platform-wide business settings (Admin > System Settings > Business Setup).
 const settingsSchema = new mongoose.Schema(
   {
-    companyName: { type: String, default: 'OviStays', trim: true },
-    email: { type: String, default: '', trim: true },
-    phone: { type: String, default: '', trim: true },
-    address: { type: String, default: '', trim: true },
+    // Company information
+    companyName: { type: String, default: 'OviStays', trim: true, minlength: 2, maxlength: 50 },
+    email: { type: String, default: '', trim: true, lowercase: true, maxlength: 100 },
+    phoneCountryCode: { type: String, default: '+91', trim: true },
+    phoneNumber: { type: String, default: '', trim: true },
+    address: { type: String, default: '', trim: true, maxlength: 250 },
+    state: { type: String, default: '', trim: true, maxlength: 50 },
+    pincode: { type: String, default: '', trim: true },
+    region: { type: String, default: 'India', trim: true },
+    gstin: { type: String, default: '', trim: true, uppercase: true, maxlength: 15 },
+
+    // Support information (shown on the public support page)
+    supportEmail: { type: String, default: '', trim: true, lowercase: true },
+    supportPhone: { type: String, default: '', trim: true },
+    supportHours: { type: String, default: '24/7 Availability', trim: true, maxlength: 100 },
+
+    // Branding
+    logo: imageField, // main logo (admin panel and default everywhere)
+    userLogo: imageField, // guest app
+    hotelLogo: imageField, // hotel panel
+    favicon: imageField,
+    termsAndConditionsPdf: fileField, // shown to hotels during onboarding
+
+    // Pricing and tax. Used when a booking is created to work out commission, fee and GST.
     currency: { type: String, enum: ['INR', 'USD'], default: 'INR' },
     commissionRate: { type: Number, default: 10, min: 0, max: 100 },
     platformFee: { type: Number, default: 0, min: 0 },
     gstRate: { type: Number, default: 12, min: 0, max: 100 },
     cancelHours: { type: Number, default: 24, min: 0 },
+
+    // Feature toggles (Admin > System Settings > Toggle Management)
+    onlinePaymentOnly: { type: Boolean, default: false }, // turns pay-at-hotel off everywhere
+    maxPayAtHotelAmount: { type: Number, default: 0, min: 0 }, // pay-at-hotel is refused above this amount; 0 = no limit
+    maintenanceMode: { type: Boolean, default: false }, // suspends new guest bookings
+    userRegistration: { type: Boolean, default: true }, // new guests can sign up
+    hotelRegistration: { type: Boolean, default: true }, // new hotels can apply to join
   },
   { timestamps: true }
 )

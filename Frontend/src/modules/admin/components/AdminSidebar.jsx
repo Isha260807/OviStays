@@ -3,14 +3,17 @@ import { Link, useLocation } from "react-router-dom"
 import {
   Search, X, ChevronDown, ChevronRight, ChevronLeft, LayoutDashboard, CalendarCheck,
   Building2, BedDouble, MapPin, Users, Star, Gift, Image, Bell, CreditCard, Wallet,
-  FileText, MessageSquare, Mail, Settings, UserCog, User, Hotel,
+  FileText, MessageSquare, Mail, Settings, UserCog, User, Hotel, Database, Code, Image as ImageIcon, Globe, Lock, Receipt, XCircle, Share2, ToggleLeft,
 } from "lucide-react"
+import { useAuthStore } from "@/core/auth/auth.store.js"
+import { useBranding } from "@/core/settings/branding.store.js"
+import { assetUrl } from "@/services/api/config.js"
 import { cn } from "@/shared/utils/cn.js"
 import { adminSidebarMenu } from "../constants/adminSidebarMenu.js"
 
 const iconMap = {
   LayoutDashboard, CalendarCheck, Building2, BedDouble, MapPin, Users, Star, Gift, Image,
-  Bell, CreditCard, Wallet, FileText, MessageSquare, Mail, Settings, UserCog, User,
+  Bell, CreditCard, Wallet, FileText, MessageSquare, Mail, Settings, UserCog, User, Database, Code, ImageIcon, Globe, Lock, Receipt, XCircle, Share2, ToggleLeft,
 }
 
 const STORAGE_KEY = "admin_sidebar_state"
@@ -19,6 +22,9 @@ const keyOf = (label) => label.toLowerCase().replace(/\s+/g, "")
 export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange }) {
   const location = useLocation()
   const [searchQuery, setSearchQuery] = useState("")
+  const branding = useBranding((s) => s.settings)
+  const companyName = branding?.companyName || "OviStays"
+  const logoUrl = assetUrl(branding?.logo?.url)
 
   const getInitialStates = () => {
     try {
@@ -43,11 +49,17 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
     onCollapseChange?.(isCollapsed)
   }, [isCollapsed, onCollapseChange])
 
+  const isSuperAdmin = useAuthStore((s) => s.user?.role === "ADMIN")
+  const menu = useMemo(
+    () => adminSidebarMenu.filter((item) => !item.superAdminOnly || isSuperAdmin),
+    [isSuperAdmin]
+  )
+
   const filteredMenuData = useMemo(() => {
     const query = searchQuery.toLowerCase().trim()
-    if (!query) return adminSidebarMenu
+    if (!query) return menu
     const filtered = []
-    adminSidebarMenu.forEach((item) => {
+    menu.forEach((item) => {
       if (item.type === "link") {
         if (item.label.toLowerCase().includes(query)) filtered.push(item)
       } else if (item.type === "section") {
@@ -67,7 +79,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
       }
     })
     return filtered
-  }, [searchQuery])
+  }, [searchQuery, menu])
 
   // Auto-expand matching groups while searching
   useEffect(() => {
@@ -233,16 +245,27 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
         <div className="shrink-0 px-3 py-3 border-b border-neutral-800 animate-[fadeIn_0.4s_ease-out] bg-black">
           <div className="flex items-center justify-between mb-3">
             {!isVisuallyCollapsed ? (
-              <div className="flex items-center gap-2 animate-[slideIn_0.3s_ease-out]">
-                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ring-1 ring-white/10">
-                  <Hotel className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-lg font-extrabold text-white tracking-tight">OviStays</span>
+              <div className="flex items-center gap-2 min-w-0 animate-[slideIn_0.3s_ease-out]">
+                {logoUrl ? (
+                  // Light tile so a dark logo stays visible on the black sidebar
+                  <div className="h-11 w-11 shrink-0 rounded-lg bg-white p-1 flex items-center justify-center">
+                    <img src={logoUrl} alt={companyName} className="h-full w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 shrink-0 rounded-lg bg-white/5 flex items-center justify-center ring-1 ring-white/10">
+                    <Hotel className="w-5 h-5 text-white" />
+                  </div>
+                )}
+                <span className="text-lg font-extrabold text-white tracking-tight truncate">{companyName}</span>
               </div>
             ) : (
               <div className="w-full flex items-center justify-center">
-                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shadow-lg shadow-black/20 ring-1 ring-white/10">
-                  <span className="text-sm font-bold text-white">O</span>
+                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shadow-lg shadow-black/20 ring-1 ring-white/10 overflow-hidden">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt={companyName} className="h-full w-full object-contain bg-white p-1" />
+                  ) : (
+                    <span className="text-sm font-bold text-white">{companyName.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
               </div>
             )}

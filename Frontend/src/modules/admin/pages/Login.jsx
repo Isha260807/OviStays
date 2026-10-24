@@ -5,6 +5,8 @@ import { ShieldCheck, Heart, ArrowRight, Loader2, Mail, Lock, Eye, EyeOff, Hotel
 import { toast } from "sonner"
 import { useAuthStore } from "@/core/auth/auth.store.js"
 import { errorMessage } from "@/services/api/axios.js"
+import { assetUrl } from "@/services/api/config.js"
+import { useBranding } from "@/core/settings/branding.store.js"
 import { adminAPI } from "../services/adminAPI.js"
 
 export default function Login() {
@@ -16,6 +18,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const submitting = useRef(false)
+  const branding = useBranding((s) => s.settings)
+  const companyName = branding?.companyName || "OviStays"
+  const logoUrl = assetUrl(branding?.logo?.url)
 
   if (token && role === "admin") return <Navigate to="/admin" replace />
 
@@ -63,8 +68,14 @@ export default function Login() {
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
               className="relative w-32 h-32 md:w-36 md:h-36 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-4 border-white mx-auto mb-4 bg-white flex flex-col items-center justify-center"
             >
-              <Hotel className="w-12 h-12 text-primary" />
-              <span className="mt-1 text-lg font-extrabold tracking-tight text-primary font-['Outfit']">OviStays</span>
+              {logoUrl ? (
+                <img src={logoUrl} alt={companyName} className="h-full w-full rounded-full object-contain p-4" />
+              ) : (
+                <>
+                  <Hotel className="w-12 h-12 text-primary" />
+                  <span className="mt-1 text-lg font-extrabold tracking-tight text-primary font-['Outfit']">{companyName}</span>
+                </>
+              )}
             </motion.div>
 
             <motion.p

@@ -26,7 +26,7 @@ const bookingPage = (title, fixedStatus) => ({
   statusEditable: true,
 })
 
-const hotelColumns = [ID, t("name", "Name"), t("city", "City"), t("owner", "Owner"), t("rooms", "Rooms"), t("rating", "Rating", "stars"), STATUS]
+const hotelColumns = [ID, t("coverImage", "Photo", "image"), t("name", "Name"), t("city", "City"), t("owner", "Owner"), t("rooms", "Rooms"), t("rating", "Rating", "stars"), STATUS]
 
 // Keys are the URL paths under /admin
 export const listConfigs = {
@@ -111,10 +111,11 @@ export const listConfigs = {
   },
   banners: {
     title: "Banners", subtitle: "Promotional banners shown in the app", endpoint: "banners",
-    columns: [ID, t("title", "Title"), t("position", "Position"), t("validTill", "Valid till"), STATUS],
+    columns: [ID, t("imageUrl", "Image", "image"), t("title", "Title"), t("position", "Position"), t("validTill", "Valid till"), STATUS],
     statusOptions: ["Active", "Draft"], statusEditable: true, addLabel: "Add Banner",
     addFields: [
       { name: "title", label: "Title", required: true, full: true },
+      { name: "imageUrl", label: "Banner image (1600 x 600 works best)", type: "image", preset: "banner", full: true },
       { name: "position", label: "Position", type: "select", options: ["Home Top", "Home Middle", "Search Page"] },
       { name: "validTill", label: "Valid till", type: "date" },
     ],
@@ -186,6 +187,7 @@ export const formConfigs = {
         fields: [
           { name: "name", label: "Hotel Name", required: true },
           { name: "owner", label: "Owner Name", required: true },
+          { name: "coverImage", label: "Cover image", type: "image", preset: "hotel", full: true },
           { name: "email", label: "Email", type: "email" },
           { name: "phone", label: "Phone" },
           { name: "description", label: "Description", type: "textarea", full: true },
@@ -207,34 +209,6 @@ export const formConfigs = {
           { name: "startingPrice", label: "Starting price per night", type: "number" },
           { name: "checkInTime", label: "Check-in time", placeholder: "12:00" },
           { name: "checkOutTime", label: "Check-out time", placeholder: "11:00" },
-        ],
-      },
-    ],
-  },
-
-  settings: {
-    title: "Business Setup", subtitle: "Company and platform settings", keepEmpty: true,
-    successMessage: "Settings saved",
-    load: () => adminAPI.getSettings(),
-    save: (values) => adminAPI.saveSettings(values),
-    sections: [
-      {
-        title: "Company",
-        fields: [
-          { name: "companyName", label: "Company Name", required: true },
-          { name: "email", label: "Support Email", type: "email" },
-          { name: "phone", label: "Support Phone" },
-          { name: "address", label: "Address", type: "textarea", full: true },
-        ],
-      },
-      {
-        title: "Pricing & tax",
-        fields: [
-          { name: "currency", label: "Currency", type: "select", options: ["INR", "USD"] },
-          { name: "commissionRate", label: "Hotel commission (%)", type: "number" },
-          { name: "platformFee", label: "Platform fee per booking", type: "number" },
-          { name: "gstRate", label: "GST (%)", type: "number" },
-          { name: "cancelHours", label: "Free cancellation window (hours)", type: "number" },
         ],
       },
     ],

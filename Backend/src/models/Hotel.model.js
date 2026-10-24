@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { codePlugin } from '../utils/codePlugin.js'
+import { IMAGE_PATH_PATTERN, IMAGE_PATH_MESSAGE } from '../utils/uploadPaths.js'
 
 export const HOTEL_STATUSES = ['Active', 'Pending', 'Suspended']
 
@@ -14,6 +15,7 @@ const hotelSchema = new mongoose.Schema(
     city: { type: String, required: true, trim: true, index: true },
     state: { type: String, trim: true, default: '' },
     pincode: { type: String, trim: true, default: '' },
+    coverImage: { type: String, trim: true, default: '', match: [IMAGE_PATH_PATTERN, IMAGE_PATH_MESSAGE] },
     rooms: { type: Number, default: 0, min: 0 },
     startingPrice: { type: Number, default: 0, min: 0 },
     checkInTime: { type: String, default: '12:00' },

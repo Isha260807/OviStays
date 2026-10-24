@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { adminAPI } from "../../services/adminAPI.js"
+import ImageUpload from "@/shared/components/ImageUpload.jsx"
 
 const inputCls =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
@@ -24,7 +25,9 @@ export function Field({ field, value, onChange, options }) {
         {field.label}
         {field.required && <span className="text-red-500"> *</span>}
       </label>
-      {field.type === "textarea" ? (
+      {field.type === "image" ? (
+        <ImageUpload id={field.name} value={value} preset={field.preset} onChange={(url) => onChange(field.name, url)} />
+      ) : field.type === "textarea" ? (
         <textarea rows={3} {...common} />
       ) : field.type === "select" ? (
         <select {...common}>
