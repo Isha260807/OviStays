@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Welcome, Login, Signup, VerifyOtp } from './pages/auth/index.js'
 import { Home } from './pages/Home/index.js'
+import VillaDetails from './pages/VillaDetails/VillaDetails.jsx'
+import BookingSoon from './pages/VillaDetails/BookingSoon.jsx'
 import { useAuthStore } from '@/core/auth/auth.store.js'
 
 function AuthRedirect() {
@@ -8,16 +10,18 @@ function AuthRedirect() {
   return <Navigate to={isDesktop ? "/auth/login" : "/auth/welcome"} replace />
 }
 
-// Home is for signed-in guests; everyone else goes to the auth screens
-function HomeGate() {
+// Pages for signed-in guests; everyone else goes to the auth screens
+function RequireUser({ children }) {
   const signedIn = useAuthStore((s) => Boolean(s.token) && s.role === 'user')
-  return signedIn ? <Home /> : <AuthRedirect />
+  return signedIn ? children : <AuthRedirect />
 }
 
 export default function UserRoutes() {
   return (
     <Routes>
-      <Route index element={<HomeGate />} />
+      <Route index element={<RequireUser><Home /></RequireUser>} />
+      <Route path="villas/:id" element={<RequireUser><VillaDetails /></RequireUser>} />
+      <Route path="villas/:id/book" element={<RequireUser><BookingSoon /></RequireUser>} />
 
       {/* User Auth Routes */}
       <Route path="auth" element={<AuthRedirect />} />

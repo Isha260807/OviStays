@@ -13,6 +13,8 @@ export const adminAPI = {
   saveSettings: (body) => api.put('/admin/settings', body).then(data),
   getAuthPages: () => api.get('/admin/auth-pages').then(data),
   saveAuthPages: (body) => api.put('/admin/auth-pages', body).then(data),
+  getHotelDetails: (id) => api.get(`/admin/hotels/${id}/details`).then(data),
+  saveHotelDetails: (id, body) => api.put(`/admin/hotels/${id}/details`, body).then(data),
   getHomePage: () => api.get('/admin/home-page').then(data),
   saveHomePage: (body) => api.put('/admin/home-page', body).then(data),
 

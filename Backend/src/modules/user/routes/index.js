@@ -4,12 +4,14 @@ import { ROLES } from '../../../core/roles/roles.js'
 
 import * as auth from '../controllers/auth.controller.js'
 import * as home from '../controllers/home.controller.js'
+import * as villa from '../controllers/villa.controller.js'
 
 const router = Router()
 
 // Public auth routes
 router.get('/auth/config', auth.getAuthConfig)
 router.get('/home', home.getHome)
+router.get('/villas/:id', villa.getVilla)
 router.post('/auth/send-otp', auth.sendOtp)
 router.post('/auth/verify-otp', auth.verifyOtp)
 router.post('/auth/register', auth.register)

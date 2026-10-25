@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Search, Plus, Eye, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import PageHeader from "../components/ui/PageHeader.jsx"
@@ -179,7 +179,9 @@ export default function ListPage({ config }) {
                   {columns.map((c) => <td key={c.key} className="px-4 py-3 whitespace-nowrap text-neutral-800 max-w-[260px] truncate">{renderCell(c, row)}</td>)}
                   <td className="px-4 py-3">
                     <div className="flex justify-end items-center gap-1">
-                      {rowActions?.map((a) => (
+                      {rowActions?.map((a) => a.to ? (
+                        <Link key={a.label} to={a.to(row)} className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-800 hover:bg-neutral-200">{a.label}</Link>
+                      ) : (
                         <button key={a.label} onClick={() => patch(row, a.patch)}
                           className={`rounded-md px-2.5 py-1 text-xs font-semibold ${a.tone === "danger" ? "bg-red-50 text-red-700 hover:bg-red-100" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
                           {a.label}

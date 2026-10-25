@@ -14,6 +14,7 @@ import ContactMessage from '../../../models/ContactMessage.model.js'
 import User from '../../user/models/User.model.js'
 import Admin from '../models/Admin.model.js'
 import { badRequest } from '../../../utils/httpError.js'
+import { recalcHotelRating } from '../../../utils/hotelRating.js'
 
 const ymd = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '')
 const strip = (d) => {
@@ -73,6 +74,7 @@ export const resources = {
     searchFields: ['refId', 'name', 'category'],
     createFields: ['name', 'category'],
     updateFields: ['name', 'category', 'status'],
+    optionLabel: (d) => d.name,
     toRow: strip,
   },
 
@@ -103,8 +105,15 @@ export const resources = {
   reviews: {
     model: Review,
     searchFields: ['refId', 'guestName', 'hotelName', 'comment'],
-    actions: ['list', 'get', 'update', 'delete'],
+    actions: ['list', 'get', 'create', 'update', 'delete'],
+    // Reviews written by guests arrive through the app; an admin can also add one by hand
+    createFields: ['hotel', 'guestName', 'rating', 'comment', 'status'],
     updateFields: ['status'],
+    beforeCreate: async (data) => {
+      await attachHotel(data)
+      if (!data.status) data.status = 'Published'
+    },
+    afterChange: (doc) => recalcHotelRating(doc.hotel),
     toRow: strip,
   },
 

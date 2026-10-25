@@ -10,6 +10,9 @@ import Location from '../src/models/Location.model.js'
 import Banner from '../src/models/Banner.model.js'
 import Coupon from '../src/models/Coupon.model.js'
 import HomePage from '../src/models/HomePage.model.js'
+import Amenity from '../src/models/Amenity.model.js'
+import Review from '../src/models/Review.model.js'
+import { recalcHotelRating } from '../src/utils/hotelRating.js'
 
 const photo = (id, w = 1000) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`
 const OWNER = 'OviStays Demo'
@@ -89,11 +92,66 @@ const fill = {
 }
 
 const page = await HomePage.get()
+// Only sections that are still empty get demo content, so changes made in the admin are never overwritten
+const isEmpty = (v) => (Array.isArray(v) ? v.length === 0 : !v)
 for (const section of page.sections) {
   const patch = fill[section.key]
-  if (patch) Object.assign(section, patch)
+  if (patch && Object.keys(patch).every((k) => isEmpty(section[k]) && isEmpty(section.promos))) Object.assign(section, patch)
 }
 await page.save()
+
+// Villa details page: amenities, gallery, highlights, rooms, policies and a few reviews
+const AMENITIES = [['Swimming Pool', 'Wellness'], ['Restaurant', 'Dining'], ['Free WiFi', 'Basic'], ['Parking', 'Basic'], ['Room Service', 'Comfort'], ['Air Conditioning', 'Comfort'], ['Kitchen', 'Dining'], ['TV', 'Comfort']]
+const amenityDocs = []
+for (const [name, category] of AMENITIES) {
+  amenityDocs.push((await Amenity.findOne({ name })) || (await Amenity.create({ name, category })))
+}
+
+const GALLERY = [
+  ['Exterior', photo('1613490493576-7fde63acd811')],
+  ['Rooms & Suites', photo('1578683010236-d716f9a3f461')],
+  ['Rooms & Suites', photo('1600607687939-ce8a6c25118c')],
+  ['Pool', photo('1602343168117-bb8ffe3e2e9f')],
+  ['Garden', photo('1519225421980-715cb0215aed')],
+  ['Dining', photo('1464366400600-7168b8af9bc3')],
+]
+const REVIEWS = [
+  ['Priya Malhotra', 5, 'Absolutely magical stay! The views were stunning and the villa was spotless. Our kids loved the pool.'],
+  ['Rahul Verma', 5, 'Best luxury property in the area. The caretaker was helpful and the breakfast was excellent.'],
+  ['Ananya Deshmukh', 4, 'Great ambience and well-kept rooms. Will definitely come back on our next trip.'],
+]
+
+for (const v of VILLAS) {
+  const h = villa[v.key]
+  if (!h.gallery?.length) {
+    h.set({
+      bedrooms: v.rooms,
+      bathrooms: v.rooms,
+      maxGuests: v.rooms * 2 + 2,
+      amenities: amenityDocs.map((a) => a._id),
+      highlights: [
+        { icon: 'bed', title: v.rooms + ' BHK', subtitle: 'Private rooms' },
+        { icon: 'wifi', title: 'Free WiFi', subtitle: 'Available' },
+        { icon: 'parking', title: 'Free Parking', subtitle: 'Available' },
+      ],
+      gallery: [{ url: v.image, category: 'Exterior' }, ...GALLERY.slice(1).map(([category, url]) => ({ url, category }))],
+      spaces: [
+        { name: 'Master Bedroom', details: '1 King bed · 350 sq.ft · AC', image: photo('1578683010236-d716f9a3f461', 600) },
+        { name: 'Living Lounge', details: 'Seating for 8 · Garden view', image: photo('1600607687939-ce8a6c25118c', 600) },
+      ],
+      description: 'This private villa in ' + v.city + ' offers a perfect blend of luxury, comfort and modern amenities. Enjoy the whole villa with your family and friends, with spacious rooms, a well-kept garden and a caretaker on call.',
+      cancellationPolicy: 'Free up to 24 hrs',
+      paymentInfo: 'Cards, UPI, Net Banking',
+    })
+    await h.save()
+  }
+  if (!(await Review.countDocuments({ hotel: h._id })) && ['lakeview', 'azure', 'pine', 'palm'].includes(v.key)) {
+    for (const [guestName, rating, comment] of REVIEWS) {
+      await Review.create({ hotel: h._id, hotelName: h.name, guestName, rating, comment, status: 'Published' })
+    }
+    await recalcHotelRating(h._id)
+  }
+}
 
 console.log(`Demo data ready: ${VILLAS.length} villas, 6 locations, 1 banner, coupon WELCOME20, Home page sections filled.`)
 await mongoose.disconnect()

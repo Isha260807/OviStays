@@ -14,6 +14,7 @@ const pick = (obj = {}, keys = []) =>
  * cfg.baseFilter     extra filter applied to every query
  * cfg.createFields / cfg.updateFields   whitelisted body fields
  * cfg.beforeCreate(data, req) / cfg.beforeUpdate(doc, data, req)   async hooks
+ * cfg.afterChange(doc)   async hook run after a record was created, updated or deleted
  * cfg.toRow(doc)     shape of one row sent to the client
  * cfg.decorate(docs) async alternative to toRow for adding aggregated columns
  * cfg.optionLabel / cfg.optionValue   enable GET /options for select inputs
@@ -89,6 +90,7 @@ export function createResourceRouter(cfg) {
       const data = pick(req.body, cfg.createFields)
       if (cfg.beforeCreate) await cfg.beforeCreate(data, req)
       const doc = await cfg.model.create(data)
+      if (cfg.afterChange) await cfg.afterChange(doc)
       const [row] = await rowsOf([doc])
       res.status(201).json({ success: true, data: row })
     })
@@ -102,6 +104,7 @@ export function createResourceRouter(cfg) {
       if (cfg.beforeUpdate) await cfg.beforeUpdate(doc, data, req)
       doc.set(data)
       await doc.save()
+      if (cfg.afterChange) await cfg.afterChange(doc)
       const [row] = await rowsOf([doc])
       res.json({ success: true, data: row })
     })
@@ -111,6 +114,7 @@ export function createResourceRouter(cfg) {
     router.delete('/:id', async (req, res) => {
       const doc = await findOne(req.params.id)
       await doc.deleteOne()
+      if (cfg.afterChange) await cfg.afterChange(doc)
       res.json({ success: true })
     })
   }

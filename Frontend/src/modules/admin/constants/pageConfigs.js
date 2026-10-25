@@ -42,6 +42,7 @@ export const listConfigs = {
     title: "All Hotels", subtitle: "Every hotel registered on OviStays", endpoint: "hotels",
     columns: hotelColumns, statusOptions: HOTEL_STATUSES, statusEditable: true,
     addLabel: "Add Hotel", addPath: "/admin/hotels/add",
+    rowActions: [{ label: "Edit details", to: (row) => `/admin/hotels/${row._id}/details` }],
   },
   "hotels/join-requests": {
     title: "Join Requests", subtitle: "Hotels waiting for approval", endpoint: "hotels",
@@ -95,7 +96,14 @@ export const listConfigs = {
   reviews: {
     title: "Reviews & Ratings", subtitle: "Guest feedback on hotels", endpoint: "reviews",
     columns: [ID, t("guestName", "Guest"), t("hotelName", "Hotel"), t("rating", "Rating", "stars"), t("comment", "Comment"), STATUS],
-    statusOptions: ["Published", "Pending", "Hidden"], statusEditable: true,
+    statusOptions: ["Published", "Pending", "Hidden"], statusEditable: true, addLabel: "Add Review",
+    addFields: [
+      { name: "hotel", label: "Hotel", type: "select", optionsFrom: "hotels", required: true, full: true },
+      { name: "guestName", label: "Guest name", required: true },
+      { name: "rating", label: "Rating (1 to 5)", type: "number", required: true },
+      { name: "comment", label: "Review", type: "textarea", full: true },
+      { name: "status", label: "Status", type: "select", options: ["Published", "Pending", "Hidden"] },
+    ],
   },
 
   coupons: {
