@@ -18,6 +18,7 @@ import EnvManagements from "./pages/developer/EnvManagements.jsx"
 import ImageSetting from "./pages/developer/ImageSetting.jsx"
 import DeveloperSettings from "./pages/developer/DeveloperSettings.jsx"
 import { listConfigs, formConfigs } from "./constants/pageConfigs.js"
+import HomeDesign from "./pages/HomeDesign.jsx"
 
 // Terms and privacy have one version per audience
 const ROLES = [
@@ -38,6 +39,7 @@ export default function AdminRoutes() {
         <Route element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="settings" element={<BusinessSetup />} />
+          <Route path="home-management/home-page" element={<HomeDesign />} />
           <Route path="reports/daily-sales" element={<DailySales />} />
           {Object.entries(reportConfigs).map(([path, config]) => (
             <Route key={path} path={`reports/${path}`} element={<ReportPage key={path} config={config} />} />

@@ -23,3 +23,14 @@ export async function uploadImage(file, type = "misc", onProgress) {
   })
   return res.data.data
 }
+
+export const MAX_VIDEO_MB = 50
+export const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"]
+
+// Short clips (e.g. Home page reels). Resolves to { url, provider }.
+export async function uploadVideo(file) {
+  const body = new FormData()
+  body.append("file", file)
+  const res = await api.post("/uploads/video", body)
+  return res.data.data
+}

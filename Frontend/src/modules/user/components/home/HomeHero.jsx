@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, CalendarDays, MapPin, Search, Users } from 'lucide-react'
 import { C } from './homeUi.jsx'
-import { HERO_IMAGE } from '../../data/homeData.js'
+import { DEFAULT_HERO } from '../../data/homeData.js'
 
 const FIELD = 'w-full bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-[#9CA3AF]'
 
@@ -76,12 +76,13 @@ function DesktopSearch() {
   )
 }
 
-export default function HomeHero() {
+export default function HomeHero({ hero }) {
+  const h = { ...DEFAULT_HERO, ...Object.fromEntries(Object.entries(hero || {}).filter(([, v]) => v)) }
   return (
     <section className="relative">
       {/* Full-width image with a white fade behind the text on the left */}
       <div className="relative h-[370px] md:h-[500px] lg:h-[560px] w-full overflow-hidden">
-        <img src={HERO_IMAGE} alt="Luxury villa" className="absolute inset-0 w-full h-full object-cover object-[75%_center] md:object-center" />
+        <img src={h.image} alt="Luxury villa" className="absolute inset-0 w-full h-full object-cover object-[75%_center] md:object-center" />
         <div className="absolute inset-0 md:hidden bg-gradient-to-r from-[#F5FAFE]/95 from-0% via-[#F5FAFE]/65 via-45% to-transparent to-75%" />
         {/* Desktop: the fade starts at the text column (left edge of the centered container), not the screen edge */}
         <div
@@ -96,13 +97,13 @@ export default function HomeHero() {
           </Link>
 
           <div className="max-w-[560px] pb-6 md:pb-16">
-            <p className="font-serif-display italic text-[15px] md:text-xl mb-3" style={{ color: C.primaryDark }}>Find your perfect villa</p>
+            <p className="font-serif-display italic text-[15px] md:text-xl mb-3" style={{ color: C.primaryDark }}>{h.eyebrow}</p>
             <h1 className="font-serif-display text-[1.9rem] min-[400px]:text-[2.2rem] md:text-6xl lg:text-7xl font-bold leading-[1.05]" style={{ color: C.ink }}>
-              Relax.<br />Unwind.<br />
-              <span style={{ color: C.primaryDark }}>Feel at home.</span>
+              {h.line1}<br />{h.line2}<br />
+              <span style={{ color: C.primaryDark }}>{h.line3}</span>
             </h1>
             <p className="mt-4 text-sm md:text-lg max-w-[250px] md:max-w-md leading-relaxed" style={{ color: C.muted }}>
-              Private villas, exceptional comfort.
+              {h.subtitle}
             </p>
           </div>
         </div>

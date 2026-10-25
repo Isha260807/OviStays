@@ -113,6 +113,7 @@ export const resources = {
     searchFields: ['refId', 'couponCode'],
     createFields: ['couponCode', 'discountType', 'discountValue', 'validTill'],
     updateFields: ['discountType', 'discountValue', 'validTill', 'status'],
+    optionLabel: (d) => `${d.couponCode} (${d.discountType === 'percent' ? d.discountValue + '%' : '₹' + d.discountValue} off, ${d.status})`,
     toRow: (d) => ({
       ...strip(d),
       discount: d.discountType === 'percent' ? `${d.discountValue}%` : `₹${d.discountValue}`,
@@ -125,6 +126,7 @@ export const resources = {
     searchFields: ['refId', 'title', 'position'],
     createFields: ['title', 'position', 'imageUrl', 'validTill'],
     updateFields: ['title', 'position', 'imageUrl', 'validTill', 'status'],
+    optionLabel: (d) => `${d.title} (${d.position}, ${d.status})`,
     toRow: (d) => ({ ...strip(d), validTill: ymd(d.validTill) }),
   },
 

@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Headphones, Shield, Star, Tag, Zap } from 'lucide-react'
 import { HomeNavbar, BottomNav, Logo } from '../../components/home/HomeNav.jsx'
@@ -7,20 +8,18 @@ import { C, Rail, SectionHeader } from '../../components/home/homeUi.jsx'
 import {
   GatewayCard, OverlayCard, PackageCard, RankedCard, RowCard,
 } from '../../components/home/VillaCards.jsx'
-import {
-  BEACH_VILLAS, BEST_DEALS, HILL_RETREATS, OFFER_OF_THE_DAY, POOL_VILLAS, POPULAR_VILLAS, PROMO, REELS,
-  CATEGORIES, TRUST_POINTS, WEEKEND_GETAWAYS, formatPrice,
-} from '../../data/homeData.js'
+import { TRUST_POINTS, formatPrice } from '../../data/homeData.js'
+import { useHomeData } from '../../hooks/useHomeData.js'
 
 const TRUST_ICONS = { Tag, Support: Headphones, Zap, Shield }
 
 const Section = ({ children }) => <section className="mt-9 lg:mt-14">{children}</section>
 
 // Round photo categories: swipe on phones, spread out on desktop
-function Categories() {
+function Categories({ items }) {
   return (
     <div className="-mx-4 px-4 md:mx-0 md:px-0 flex gap-4 md:gap-6 overflow-x-auto md:justify-between lg:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {CATEGORIES.map(({ label, image, to }) => (
+      {items.map(({ label, image, to }) => (
         <Link key={label} to={to} className="flex flex-col items-center gap-2 shrink-0 group">
           <span className="block w-[68px] h-[68px] lg:w-24 lg:h-24 rounded-full overflow-hidden ring-2 ring-white shadow-[0_2px_6px_rgba(17,17,17,0.15)]">
             <img src={image} alt={label} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -32,9 +31,10 @@ function Categories() {
   )
 }
 
-function PromoBanner() {
+function PromoBanner({ promo, className = '' }) {
+  const PROMO = { ...promo, line1: promo.line, line2: 'Use code:', cta: 'Book Now' }
   return (
-    <Link to="/offers" className="relative flex items-center rounded-3xl overflow-hidden min-h-[168px] lg:min-h-[230px] shadow-[0_8px_24px_rgba(22,138,211,0.12)]">
+    <Link to="/offers" className={`relative flex items-center rounded-3xl overflow-hidden min-h-[168px] lg:min-h-[230px] shadow-[0_8px_24px_rgba(22,138,211,0.12)] ${className}`}>
       <img src={PROMO.image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/5" />
       <div className="relative p-4 lg:p-10 max-w-[320px] lg:max-w-lg">
@@ -51,8 +51,7 @@ function PromoBanner() {
   )
 }
 
-function OfferOfTheDay() {
-  const o = OFFER_OF_THE_DAY
+function OfferOfTheDay({ o }) {
   return (
     <Link to={`/villas/${o.id}`} className="relative block rounded-3xl overflow-hidden h-[190px] lg:h-[380px] group shadow-[0_8px_24px_rgba(22,138,211,0.15)]">
       <img src={o.image} alt={o.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -109,56 +108,72 @@ function Footer() {
   )
 }
 
+// Section titles used when the admin leaves a title empty
+const DEFAULT_TITLES = {
+  popular: 'Popular Destinations', bestDeals: 'Best Deals', reels: 'Villa Vibes', poolVillas: 'Private Pool Villas',
+  weekend: 'Weekend Getaways!', hills: 'Hill Retreats', offerOfDay: 'Offer of the Day!', beachside: 'Beachside Villas',
+}
+
+// One renderer per section type; the order and content come from the API.
+const SECTION_VIEWS = {
+  categories: (s) => <Categories items={s.categories} />,
+  popular: (s, h) => (
+    <Section>{h}<Rail>{s.items.map((v) => <OverlayCard key={v.id} villa={v} />)}</Rail></Section>
+  ),
+  promo: (s) => (
+    <Section>
+      {s.promos.length === 1 ? <PromoBanner promo={s.promos[0]} /> : (
+        <Rail cols="lg:grid-cols-2">{s.promos.map((p) => <PromoBanner key={p.id} promo={p} className="shrink-0 snap-start w-[88%] lg:w-auto" />)}</Rail>
+      )}
+    </Section>
+  ),
+  bestDeals: (s, h) => (
+    <Section>{h}<div className="grid gap-4 lg:grid-cols-3">{s.items.map((v) => <RowCard key={v.id} villa={v} />)}</div></Section>
+  ),
+  reels: (s, h) => <Section>{h}<Reels reels={s.reels} /></Section>,
+  poolVillas: (s, h) => (
+    <Section>{h}<Rail cols="lg:grid-cols-3">{s.items.map((v) => <PackageCard key={v.id} villa={{ ...v, tag: v.rooms ? `${v.rooms} Rooms` : 'Private Pool' }} />)}</Rail></Section>
+  ),
+  weekend: (s, h) => (
+    <Section>{h}<Rail cols="lg:grid-cols-3">{s.tiles.map((p) => <GatewayCard key={p.id} place={p} />)}</Rail></Section>
+  ),
+  hills: (s, h) => (
+    <Section>{h}<Rail cols="lg:grid-cols-3">{s.items.map((v) => <RankedCard key={v.id} villa={v} />)}</Rail></Section>
+  ),
+  offerOfDay: (s, h) => <Section>{h}<OfferOfTheDay o={s.offer} /></Section>,
+  beachside: (s, h) => (
+    <Section>{h}<Rail cols="lg:grid-cols-3">{s.items.map((v) => <RowCard key={v.id} villa={v} rail />)}</Rail></Section>
+  ),
+}
+
+// Heading props per section: which ones show "View All" and where it goes
+const HEADER_PROPS = {
+  popular: {},
+  bestDeals: { action: 'View All' },
+  reels: { action: null },
+  poolVillas: { action: 'View All', to: '/villas?type=pool' },
+  weekend: {},
+  hills: { action: 'View All', to: '/villas?type=hill' },
+  offerOfDay: { action: null },
+  beachside: { action: 'View All', to: '/villas?type=beach' },
+}
+
 export default function Home() {
+  const { data } = useHomeData()
+
   return (
     <div className="min-h-screen pb-24 md:pb-0 antialiased" style={{ background: C.cream, color: C.ink }}>
       <HomeNavbar />
-      <HomeHero />
+      <HomeHero hero={data?.hero} />
 
       <main className="max-w-[1360px] mx-auto px-4 md:px-6 lg:px-10 mt-6 md:mt-12">
-        <Categories />
-
-        <Section>
-          <SectionHeader title="Popular Destinations" />
-          <Rail>{POPULAR_VILLAS.map((v) => <OverlayCard key={v.id} villa={v} />)}</Rail>
-        </Section>
-
-        <Section><PromoBanner /></Section>
-
-        <Section>
-          <SectionHeader title="Best Deals" action="View All" />
-          <div className="grid gap-4 lg:grid-cols-3">{BEST_DEALS.map((v) => <RowCard key={v.id} villa={v} />)}</div>
-        </Section>
-
-        <Section>
-          <SectionHeader title="Villa Vibes" subtitle="quick tours, just a few seconds each" action={null} />
-          <Reels reels={REELS} />
-        </Section>
-
-        <Section>
-          <SectionHeader title="Private Pool Villas" action="View All" to="/villas?type=pool" />
-          <Rail cols="lg:grid-cols-3">{POOL_VILLAS.map((v) => <PackageCard key={v.id} villa={v} />)}</Rail>
-        </Section>
-
-        <Section>
-          <SectionHeader title="Weekend Getaways!" />
-          <Rail cols="lg:grid-cols-3">{WEEKEND_GETAWAYS.map((p) => <GatewayCard key={p.id} place={p} />)}</Rail>
-        </Section>
-
-        <Section>
-          <SectionHeader title="Hill Retreats" action="View All" to="/villas?type=hill" />
-          <Rail cols="lg:grid-cols-3">{HILL_RETREATS.map((v) => <RankedCard key={v.id} villa={v} />)}</Rail>
-        </Section>
-
-        <Section>
-          <SectionHeader title="Offer of the Day!" action={null} />
-          <OfferOfTheDay />
-        </Section>
-
-        <Section>
-          <SectionHeader title="Beachside Villas" action="View All" to="/villas?type=beach" />
-          <Rail cols="lg:grid-cols-3">{BEACH_VILLAS.map((v) => <RowCard key={v.id} villa={v} rail />)}</Rail>
-        </Section>
+        {(data?.sections || []).map((s) => {
+          const view = SECTION_VIEWS[s.key]
+          if (!view) return null
+          const title = s.title || DEFAULT_TITLES[s.key]
+          const heading = title ? <SectionHeader title={title} subtitle={s.subtitle} {...HEADER_PROPS[s.key]} /> : null
+          return <Fragment key={s.key}>{view(s, heading)}</Fragment>
+        })}
 
         <section className="mt-10 lg:mt-16"><TrustStrip /></section>
       </main>

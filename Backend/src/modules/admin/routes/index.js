@@ -9,6 +9,7 @@ import { getDashboardStats } from '../controllers/dashboard.controller.js'
 import * as reports from '../controllers/reports.controller.js'
 import * as broadcast from '../controllers/broadcast.controller.js'
 import * as pages from '../controllers/pages.controller.js'
+import * as home from '../controllers/home.controller.js'
 import * as dev from '../controllers/developer.controller.js'
 import { requireSuperAdmin } from '../services/superAdmin.middleware.js'
 
@@ -30,6 +31,8 @@ router.get('/settings', settings.getSettings)
 router.put('/settings', settings.updateSettings)
 router.get('/auth-pages', settings.getAuthPages)
 router.put('/auth-pages', settings.updateAuthPages)
+router.get('/home-page', home.getHomePage)
+router.put('/home-page', home.updateHomePage)
 router.get('/settings/toggles', settings.getToggles)
 router.patch('/settings/toggles', settings.updateToggles)
 router.get('/reports/daily-sales', reports.dailySales)

@@ -13,6 +13,8 @@ export const adminAPI = {
   saveSettings: (body) => api.put('/admin/settings', body).then(data),
   getAuthPages: () => api.get('/admin/auth-pages').then(data),
   saveAuthPages: (body) => api.put('/admin/auth-pages', body).then(data),
+  getHomePage: () => api.get('/admin/home-page').then(data),
+  saveHomePage: (body) => api.put('/admin/home-page', body).then(data),
 
   // Reports: path is e.g. "transactions" or "tax/<hotelId>"
   report: (path, params) => api.get(`/admin/reports/${path}`, { params }).then(data),

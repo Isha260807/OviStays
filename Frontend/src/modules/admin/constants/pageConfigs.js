@@ -237,7 +237,7 @@ export const formConfigs = {
   },
 
   // Images and texts of the user Welcome, Login, Signup and OTP pages
-  "auth-pages": {
+  "home-management/auth-pages": {
     title: "Auth Pages", subtitle: "Images and texts shown on the Welcome, Login, Signup and OTP pages", keepEmpty: true,
     successMessage: "Auth pages updated",
     load: () => adminAPI.getAuthPages(),

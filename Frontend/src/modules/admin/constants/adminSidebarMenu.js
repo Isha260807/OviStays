@@ -114,12 +114,19 @@ export const adminSidebarMenu = [
   },
   {
     type: "section",
+    label: "HOME MANAGEMENT",
+    items: [
+      { type: "link", label: "Auth Pages", path: "/admin/home-management/auth-pages", icon: "ImageIcon" },
+      { type: "link", label: "Home Page Design", path: "/admin/home-management/home-page", icon: "LayoutDashboard" },
+    ],
+  },
+  {
+    type: "section",
     label: "SYSTEM SETTINGS",
     items: [
       { type: "link", label: "Broadcast Notification", path: "/admin/broadcast-notification", icon: "Bell" },
       { type: "link", label: "Toggle Management", path: "/admin/toggle-management", icon: "ToggleLeft" },
       { type: "link", label: "Business Setup", path: "/admin/settings", icon: "Settings" },
-      { type: "link", label: "Auth Pages", path: "/admin/auth-pages", icon: "ImageIcon" },
       { type: "link", label: "Sub Admins", path: "/admin/sub-admins", icon: "UserCog" },
       { type: "link", label: "Profile", path: "/admin/profile", icon: "User" },
     ],

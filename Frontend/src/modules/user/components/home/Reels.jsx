@@ -100,13 +100,17 @@ function ReelViewer({ reels, start, onClose }) {
 
         <div className="absolute inset-x-0 bottom-0 p-4 text-white">
           <h3 className="font-serif-display text-2xl font-bold">{reel.title}</h3>
-          <p className="text-sm text-white/80 mt-0.5">{reel.villa} · {reel.city}</p>
-          <div className="flex items-center justify-between mt-3">
-            <p className="text-lg font-bold">{formatPrice(reel.price)} <span className="text-xs font-normal text-white/75">/ night</span></p>
-            <Link to={`/villas/${reel.villaId}`} className="px-5 py-2.5 rounded-full text-sm font-semibold text-white" style={{ background: C.primary }}>
-              View villa
-            </Link>
-          </div>
+          {reel.villaId && (
+            <>
+              <p className="text-sm text-white/80 mt-0.5">{reel.villa} · {reel.city}</p>
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-lg font-bold">{formatPrice(reel.price)} <span className="text-xs font-normal text-white/75">/ night</span></p>
+                <Link to={`/villas/${reel.villaId}`} className="px-5 py-2.5 rounded-full text-sm font-semibold text-white" style={{ background: C.primary }}>
+                  View villa
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
