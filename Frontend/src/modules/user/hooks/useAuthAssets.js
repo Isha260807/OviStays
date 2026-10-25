@@ -10,8 +10,8 @@ export const DEFAULT_AUTH_ASSETS = {
   tagText: '#Luxury',
   welcomeTitle: 'Find your perfect stay anywhere in the world',
   welcomeSubtitle: 'Find and reserve exceptional stays worldwide with a seamless and reliable booking experience.',
-  authTagline: 'Your Perfect Stay Awaits.',
-  authSubtagline: 'Book the best hotels and enjoy comfortable stays at great prices.',
+  authTagline: 'Your Dream Villa Awaits.',
+  authSubtagline: 'Book private villas and enjoy comfortable stays with family & friends at great prices.',
 }
 
 let cachedAssets = null

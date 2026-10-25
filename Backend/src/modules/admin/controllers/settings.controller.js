@@ -98,3 +98,28 @@ export async function updateSettings(req, res) {
   await s.save()
   res.json({ success: true, message: 'Business settings saved', data: adminView(s) })
 }
+
+// Images and texts shown on the user Welcome, Login, Signup and OTP pages
+const AUTH_PAGE_FIELDS = [
+  'welcomeTravelerImage', 'welcomeCard1', 'welcomeCard2', 'welcomeCard3', 'authHeroBanner',
+  'tagText', 'authTagline', 'authSubtagline', 'welcomeTitle', 'welcomeSubtitle',
+]
+
+export async function getAuthPages(req, res) {
+  const s = await Settings.get()
+  const saved = s.authAssets?.toObject?.() || s.authAssets || {}
+  res.json({ success: true, data: Object.fromEntries(AUTH_PAGE_FIELDS.map((k) => [k, saved[k] ?? ''])) })
+}
+
+export async function updateAuthPages(req, res) {
+  const body = req.body || {}
+  const s = await Settings.get()
+  for (const key of AUTH_PAGE_FIELDS) {
+    if (body[key] === undefined) continue
+    const value = String(body[key] ?? '').trim()
+    if (value.length > 500) throw badRequest(`${key} is too long (max 500 characters)`)
+    s.authAssets[key] = value
+  }
+  await s.save()
+  res.json({ success: true, message: 'Auth pages updated', data: Object.fromEntries(AUTH_PAGE_FIELDS.map((k) => [k, s.authAssets[k] ?? ''])) })
+}

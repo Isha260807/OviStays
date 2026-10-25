@@ -69,7 +69,7 @@ export default function Welcome() {
           <h1 className="font-serif-display text-[1.65rem] sm:text-[1.8rem] font-bold text-[#111111] leading-tight">
             Find your{' '}
             <span className="italic font-normal text-[#55B8F5]">
-              perfect stay
+              dream villa
             </span>
             <br />
             <span className="italic font-normal text-[#55B8F5]">
@@ -81,7 +81,7 @@ export default function Welcome() {
           {/* Subtitle in Muted Text */}
           <p className="mt-2 text-xs text-[#6B7280] leading-relaxed max-w-[280px]">
             {assets.welcomeSubtitle ||
-              'Find and reserve exceptional stays worldwide with a seamless and reliable booking experience.'}
+              'Find and book exceptional private villas with a seamless and reliable booking experience.'}
           </p>
 
           {/* Action Button */}

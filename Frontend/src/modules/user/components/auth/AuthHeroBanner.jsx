@@ -4,8 +4,8 @@ import { ChevronLeft } from 'lucide-react'
 
 export default function AuthHeroBanner({
   imageUrl,
-  tagline = 'Your Perfect Stay Awaits.',
-  subtagline = 'Book the best hotels and enjoy comfortable stays at great prices.',
+  tagline = 'Your Dream Villa Awaits.',
+  subtagline = 'Book private villas and enjoy comfortable stays with family & friends at great prices.',
   showBack = false,
   onBack,
 }) {
@@ -21,10 +21,10 @@ export default function AuthHeroBanner({
 
   return (
     <div className="relative w-full h-[210px] shrink-0 overflow-hidden select-none">
-      {/* Background Hotel Room Image */}
+      {/* Background Villa Image */}
       <img
         src={imageUrl || '/assets/auth/hotel_hero.jpg'}
-        alt="OviStays Luxury Hotel"
+        alt="OviStays Luxury Villa"
         className="w-full h-full object-cover object-center"
       />
 

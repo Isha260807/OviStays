@@ -211,29 +211,8 @@ export const formConfigs = {
   settings: {
     title: "Business Setup", subtitle: "Company and platform settings", keepEmpty: true,
     successMessage: "Settings saved",
-    load: async () => {
-      const data = await adminAPI.getSettings()
-      return {
-        ...data,
-        welcomeTravelerImage: data.authAssets?.welcomeTravelerImage || '/assets/auth/traveler_hero.jpg',
-        welcomeCard1: data.authAssets?.welcomeCard1 || '/assets/auth/card_beach.jpg',
-        welcomeCard2: data.authAssets?.welcomeCard2 || '/assets/auth/card_pool.jpg',
-        welcomeCard3: data.authAssets?.welcomeCard3 || '/assets/auth/card_patio.jpg',
-        authHeroBanner: data.authAssets?.authHeroBanner || '/assets/auth/hotel_hero.jpg',
-        tagText: data.authAssets?.tagText || '#Luxury',
-      }
-    },
-    save: (values) => {
-      const authAssets = {
-        welcomeTravelerImage: values.welcomeTravelerImage,
-        welcomeCard1: values.welcomeCard1,
-        welcomeCard2: values.welcomeCard2,
-        welcomeCard3: values.welcomeCard3,
-        authHeroBanner: values.authHeroBanner,
-        tagText: values.tagText,
-      }
-      return adminAPI.saveSettings({ ...values, authAssets })
-    },
+    load: () => adminAPI.getSettings(),
+    save: (values) => adminAPI.saveSettings(values),
     sections: [
       {
         title: "Company",
@@ -254,15 +233,38 @@ export const formConfigs = {
           { name: "cancelHours", label: "Free cancellation window (hours)", type: "number" },
         ],
       },
+    ],
+  },
+
+  // Images and texts of the user Welcome, Login, Signup and OTP pages
+  "auth-pages": {
+    title: "Auth Pages", subtitle: "Images and texts shown on the Welcome, Login, Signup and OTP pages", keepEmpty: true,
+    successMessage: "Auth pages updated",
+    load: () => adminAPI.getAuthPages(),
+    save: (values) => adminAPI.saveAuthPages(values),
+    sections: [
       {
-        title: "Auth & App Visuals (Dynamic Images)",
+        title: "Welcome page images",
         fields: [
-          { name: "welcomeTravelerImage", label: "Welcome Cutout Traveler Image URL / Path", full: true },
-          { name: "welcomeCard1", label: "Welcome Beach Card Image URL / Path", full: true },
-          { name: "welcomeCard2", label: "Welcome Pool Card Image URL / Path", full: true },
-          { name: "welcomeCard3", label: "Welcome Patio Card Image URL / Path", full: true },
-          { name: "authHeroBanner", label: "Auth Hero Hotel Suite Image URL / Path", full: true },
-          { name: "tagText", label: "Luxury Tag Text (e.g. #Luxury)" },
+          { name: "welcomeTravelerImage", label: "Main image (transparent cutout works best)", type: "image", preset: "misc" },
+          { name: "welcomeCard1", label: "Card image 1", type: "image", preset: "misc" },
+          { name: "welcomeCard2", label: "Card image 2", type: "image", preset: "misc" },
+          { name: "welcomeCard3", label: "Card image 3", type: "image", preset: "misc" },
+        ],
+      },
+      {
+        title: "Login, Signup & OTP images",
+        fields: [
+          { name: "authHeroBanner", label: "Hero banner image (villa photo)", type: "image", preset: "banner" },
+        ],
+      },
+      {
+        title: "Texts",
+        fields: [
+          { name: "tagText", label: "Badge text (e.g. #Luxury)", full: true },
+          { name: "welcomeSubtitle", label: "Welcome page subtitle", type: "textarea", full: true },
+          { name: "authTagline", label: "Login, Signup & OTP tagline", full: true },
+          { name: "authSubtagline", label: "Login, Signup & OTP subtagline", type: "textarea", full: true },
         ],
       },
     ],

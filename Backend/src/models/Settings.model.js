@@ -59,9 +59,9 @@ const settingsSchema = new mongoose.Schema(
       authHeroBanner: { type: String, default: '/assets/auth/hotel_hero.jpg' },
       tagText: { type: String, default: '#Luxury' },
       welcomeTitle: { type: String, default: 'Find your perfect stay anywhere in the world' },
-      welcomeSubtitle: { type: String, default: 'Find and reserve exceptional stays worldwide with a seamless and reliable booking experience.' },
-      authTagline: { type: String, default: 'Your Perfect Stay Awaits.' },
-      authSubtagline: { type: String, default: 'Book the best hotels and enjoy comfortable stays at great prices.' },
+      welcomeSubtitle: { type: String, default: 'Find and book exceptional private villas with a seamless and reliable booking experience.' },
+      authTagline: { type: String, default: 'Your Dream Villa Awaits.' },
+      authSubtagline: { type: String, default: 'Book private villas and enjoy comfortable stays with family & friends at great prices.' },
     },
   },
   { timestamps: true }

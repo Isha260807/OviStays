@@ -3,8 +3,9 @@ import { BedDouble, Tag, ShieldCheck, Building2, Star } from 'lucide-react'
 
 export default function AuthLandscapePanel({
   imageUrl,
-  tagline = 'Your Perfect Stay Awaits.',
-  subtagline = 'Book the best hotels and enjoy comfortable stays at great prices.',
+  tagline = 'Your Dream Villa Awaits.',
+  subtagline = 'Book private villas and enjoy comfortable stays with family & friends at great prices.',
+  tagText,
 }) {
   return (
     <div className="hidden lg:block lg:w-[50%] xl:w-[52%] relative min-h-screen select-none shrink-0">
@@ -13,7 +14,7 @@ export default function AuthLandscapePanel({
         {/* Background Photography */}
         <img
           src={imageUrl || '/assets/auth/hotel_hero.jpg'}
-          alt="OviStays Luxury Hotel"
+          alt="OviStays Luxury Villa"
           className="absolute inset-0 w-full h-full object-cover object-center scale-105 brightness-90"
         />
 
@@ -34,21 +35,21 @@ export default function AuthLandscapePanel({
                 Ovi<span className="text-[#55B8F5]">Stays</span>
               </span>
               <span className="block text-[10px] uppercase tracking-widest text-white/70 font-medium">
-                Luxury Hotels &amp; Villas
+                Luxury Villa Rentals
               </span>
             </div>
           </div>
 
           <div className="px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-medium text-white flex items-center gap-1.5">
             <Star className="w-3.5 h-3.5 fill-[#55B8F5] text-[#55B8F5]" />
-            <span>Top Rated Hospitality</span>
+            <span>Top Rated Villas</span>
           </div>
         </div>
 
         {/* Center Editorial Showcase */}
         <div className="max-w-lg my-auto py-10">
           <div className="inline-block px-3.5 py-1 rounded-full bg-[#55B8F5]/25 border border-[#55B8F5]/40 text-[#55B8F5] text-xs font-semibold uppercase tracking-wider mb-4 backdrop-blur-sm">
-            #Luxury Hospitality
+            {tagText || '#Luxury Villa Stays'}
           </div>
 
           <h1 className="font-serif-display text-4xl xl:text-5xl font-bold leading-tight drop-shadow-lg">
@@ -67,7 +68,7 @@ export default function AuthLandscapePanel({
               </div>
               <div className="text-xs font-bold text-white">Wide Selection</div>
               <div className="text-[10px] text-white/75 mt-0.5 leading-snug">
-                1,000+ handpicked hotels &amp; villas
+                1,000+ handpicked private villas
               </div>
             </div>
 
@@ -77,7 +78,7 @@ export default function AuthLandscapePanel({
               </div>
               <div className="text-xs font-bold text-white">Best Price</div>
               <div className="text-[10px] text-white/75 mt-0.5 leading-snug">
-                Guaranteed best rate booking deals
+                Best rates on every villa booking
               </div>
             </div>
 
@@ -96,7 +97,7 @@ export default function AuthLandscapePanel({
         {/* Bottom Trust Assurance */}
         <div className="flex items-center gap-2 text-xs text-white/75 border-t border-white/15 pt-5">
           <Building2 className="w-4 h-4 text-[#55B8F5]" />
-          <span>Trusted by over 10M+ satisfied travelers worldwide</span>
+          <span>Trusted by 10M+ happy villa guests</span>
         </div>
       </div>
 

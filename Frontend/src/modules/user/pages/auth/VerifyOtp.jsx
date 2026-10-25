@@ -128,6 +128,7 @@ export default function VerifyOtp() {
         imageUrl={assets.authHeroBanner}
         tagline={assets.authTagline}
         subtagline={assets.authSubtagline}
+        tagText={assets.tagText}
       />
 
       {/* Form Section (Full width on mobile, 50% width on laptop) */}

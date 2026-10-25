@@ -119,6 +119,7 @@ export const adminSidebarMenu = [
       { type: "link", label: "Broadcast Notification", path: "/admin/broadcast-notification", icon: "Bell" },
       { type: "link", label: "Toggle Management", path: "/admin/toggle-management", icon: "ToggleLeft" },
       { type: "link", label: "Business Setup", path: "/admin/settings", icon: "Settings" },
+      { type: "link", label: "Auth Pages", path: "/admin/auth-pages", icon: "ImageIcon" },
       { type: "link", label: "Sub Admins", path: "/admin/sub-admins", icon: "UserCog" },
       { type: "link", label: "Profile", path: "/admin/profile", icon: "User" },
     ],

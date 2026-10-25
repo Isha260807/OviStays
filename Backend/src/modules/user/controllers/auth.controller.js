@@ -25,9 +25,9 @@ export async function getAuthConfig(req, res) {
     authHeroBanner: '/assets/auth/hotel_hero.jpg',
     tagText: '#Luxury',
     welcomeTitle: 'Find your perfect stay anywhere in the world',
-    welcomeSubtitle: 'Find and reserve exceptional stays worldwide with a seamless and reliable booking experience.',
-    authTagline: 'Your Perfect Stay Awaits.',
-    authSubtagline: 'Book the best hotels and enjoy comfortable stays at great prices.',
+    welcomeSubtitle: 'Find and book exceptional private villas with a seamless and reliable booking experience.',
+    authTagline: 'Your Dream Villa Awaits.',
+    authSubtagline: 'Book private villas and enjoy comfortable stays with family & friends at great prices.',
   }
 
   const assets = {

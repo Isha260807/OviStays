@@ -77,6 +77,7 @@ export default function Signup() {
         imageUrl={assets.authHeroBanner}
         tagline={assets.authTagline}
         subtagline={assets.authSubtagline}
+        tagText={assets.tagText}
       />
 
       {/* Form Section (Full width on mobile, 50% width on laptop) */}
@@ -127,7 +128,7 @@ export default function Signup() {
                 Create Account
               </h2>
               <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
-                Sign up to book hotels and manage your trips easily.
+                Sign up to book your dream villa and manage your stays easily.
               </p>
             </div>
 

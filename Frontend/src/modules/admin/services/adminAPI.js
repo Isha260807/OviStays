@@ -11,6 +11,8 @@ export const adminAPI = {
   getDashboardStats: (params) => api.get('/admin/dashboard/stats', { params }).then(data),
   getSettings: () => api.get('/admin/settings').then(data),
   saveSettings: (body) => api.put('/admin/settings', body).then(data),
+  getAuthPages: () => api.get('/admin/auth-pages').then(data),
+  saveAuthPages: (body) => api.put('/admin/auth-pages', body).then(data),
 
   // Reports: path is e.g. "transactions" or "tax/<hotelId>"
   report: (path, params) => api.get(`/admin/reports/${path}`, { params }).then(data),

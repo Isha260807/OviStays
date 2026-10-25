@@ -53,6 +53,7 @@ export default function Login() {
         imageUrl={assets.authHeroBanner}
         tagline={assets.authTagline}
         subtagline={assets.authSubtagline}
+        tagText={assets.tagText}
       />
 
       {/* Form Section (Full width on mobile, 50% width on laptop) */}
@@ -76,7 +77,7 @@ export default function Login() {
                   Wide Selection
                 </span>
                 <span className="text-[9.5px] text-[#6B7280] mt-0.5 leading-tight">
-                  1000+ hotels worldwide
+                  1000+ villas to choose from
                 </span>
               </div>
 
