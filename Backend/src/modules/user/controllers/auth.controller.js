@@ -3,6 +3,10 @@ import Settings from '../../../models/Settings.model.js'
 import { signAccessToken } from '../../../core/auth/token.util.js'
 import { ROLES } from '../../../core/roles/roles.js'
 import { badRequest, HttpError } from '../../../utils/httpError.js'
+import {
+  OTP_MAX_ATTEMPTS, OTP_RESEND_COOLDOWN_MS, OTP_TTL_MS,
+  generateOtp, hashOtp, isRealOtp, isValidPhone, normalizePhone, otpMatches, sendSms,
+} from '../services/otp.service.js'
 
 const publicUser = (u) => ({
   _id: u._id,
@@ -42,76 +46,76 @@ export async function getAuthConfig(req, res) {
   })
 }
 
-// Send or resend OTP to a phone number
-export async function sendOtp(req, res) {
-  const phone = String(req.body.phone || '').trim()
-  if (!phone || phone.length < 10) {
-    throw badRequest('Please enter a valid 10-digit mobile number')
-  }
-
-  // Generate 6-digit OTP (for dev / demo, 123456 is standard fallback or random 6-digit)
-  const otp = '123456'
-  const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
-
-  let user = await User.findOne({ phone }).select('+otp +otpExpiresAt')
-  if (!user) {
-    user = new User({
-      phone,
-      name: req.body.name?.trim() || 'Guest Traveler',
-      email: req.body.email?.trim().toLowerCase() || '',
-    })
-  } else if (req.body.name) {
-    user.name = req.body.name.trim()
-    if (req.body.email) user.email = req.body.email.trim().toLowerCase()
-  }
-
-  user.otp = otp
-  user.otpExpiresAt = otpExpiresAt
+// Stores a fresh OTP on the user and sends it (demo mode: fixed code, nothing sent)
+async function issueOtp(user) {
+  const otp = generateOtp()
+  user.otp = hashOtp(otp)
+  user.otpExpiresAt = new Date(Date.now() + OTP_TTL_MS)
+  user.otpSentAt = new Date()
+  user.otpAttempts = 0
   await user.save()
 
-  res.json({
-    success: true,
-    message: `OTP sent successfully to ${phone}`,
-    data: {
-      phone,
-      demoOtp: otp, // convenient for preview / testing
-      expiresInSeconds: 300,
-    },
-  })
+  if (isRealOtp()) {
+    await sendSms(user.phone, otp)
+    return {}
+  }
+  return { demoOtp: otp }
+}
+
+const otpResponse = (phone, extra) => ({ phone, expiresInSeconds: OTP_TTL_MS / 1000, ...extra })
+
+function readPhone(body) {
+  const phone = normalizePhone(body.phone)
+  if (!isValidPhone(phone)) throw badRequest('Please enter a valid 10-digit mobile number')
+  return phone
+}
+
+function assertCanSend(user) {
+  if (user.status !== 'Active') throw new HttpError(403, 'This account is not active. Please contact support.')
+  if (isRealOtp() && user.otpSentAt && Date.now() - user.otpSentAt.getTime() < OTP_RESEND_COOLDOWN_MS) {
+    throw new HttpError(429, 'Please wait a few seconds before requesting another OTP.')
+  }
+}
+
+// Login / resend: send an OTP to an existing account
+export async function sendOtp(req, res) {
+  const phone = readPhone(req.body)
+
+  const user = await User.findOne({ phone }).select('+otpSentAt')
+  if (!user) throw new HttpError(404, 'No account found with this number. Please sign up first.')
+  assertCanSend(user)
+
+  const extra = await issueOtp(user)
+  res.json({ success: true, message: `OTP sent successfully to ${phone}`, data: otpResponse(phone, extra) })
 }
 
 // Verify OTP and issue JWT session
 export async function verifyOtp(req, res) {
-  const phone = String(req.body.phone || '').trim()
+  const phone = readPhone(req.body)
   const otp = String(req.body.otp || '').trim()
+  if (!otp) throw badRequest('Phone number and OTP are required')
 
-  if (!phone || !otp) {
-    throw badRequest('Phone number and OTP are required')
+  const user = await User.findOne({ phone }).select('+otp +otpExpiresAt +otpAttempts')
+  if (!user || !user.otp) throw badRequest('No OTP requested for this number. Please request a new one.')
+  if (user.status !== 'Active') throw new HttpError(403, 'This account is not active. Please contact support.')
+
+  if (user.otpAttempts >= OTP_MAX_ATTEMPTS) {
+    throw new HttpError(429, 'Too many wrong attempts. Please request a new OTP.')
   }
-
-  const user = await User.findOne({ phone }).select('+otp +otpExpiresAt')
-  if (!user) {
-    throw new HttpError(404, 'User not found. Please request a new OTP.')
+  if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+    throw badRequest('OTP has expired. Please request a new one.')
   }
-
-  // Check OTP match (allow '123456' as master bypass for easy testing or exact match)
-  const isMatch = otp === '123456' || (user.otp && user.otp === otp)
-  if (!isMatch) {
+  if (!otpMatches(otp, user.otp)) {
+    user.otpAttempts += 1
+    await user.save()
     throw badRequest('Invalid OTP. Please check and try again.')
   }
 
-  if (user.otpExpiresAt && new Date() > user.otpExpiresAt && otp !== '123456') {
-    throw badRequest('OTP has expired. Please request a new one.')
-  }
-
-  // Clear OTP
   user.otp = undefined
   user.otpExpiresAt = undefined
+  user.otpAttempts = 0
+  user.phoneVerified = true
   await user.save()
-
-  if (user.status !== 'Active') {
-    throw new HttpError(403, 'Your account is suspended. Please contact support.')
-  }
 
   const token = signAccessToken({ id: String(user._id), role: ROLES.USER }, '30d')
 
@@ -125,38 +129,34 @@ export async function verifyOtp(req, res) {
   })
 }
 
-// Register new user
+// Register new user (counts as verified once the OTP is confirmed)
 export async function register(req, res) {
-  const { name, phone, email } = req.body
-  if (!name || !phone) {
-    throw badRequest('Name and phone number are required')
-  }
+  const name = String(req.body.name || '').trim()
+  if (!name) throw badRequest('Name and phone number are required')
+  const phone = readPhone(req.body)
+  const email = String(req.body.email || '').trim().toLowerCase()
 
-  let user = await User.findOne({ phone }).select('+otp +otpExpiresAt')
-  if (!user) {
-    user = new User({
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email ? email.trim().toLowerCase() : '',
-    })
+  let user = await User.findOne({ phone }).select('+otpSentAt')
+  if (user?.phoneVerified) {
+    throw new HttpError(409, 'An account with this number already exists. Please log in.')
+  }
+  if (user) {
+    // Earlier signup that was never verified, so the details can be replaced
+    user.name = name
+    if (email) user.email = email
   } else {
-    user.name = name.trim()
-    if (email) user.email = email.trim().toLowerCase()
+    user = new User({ name, phone, email })
   }
+  assertCanSend(user)
 
-  const otp = '123456'
-  user.otp = otp
-  user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000)
-  await user.save()
-
-  res.json({
-    success: true,
-    message: 'Account created! Verification OTP sent.',
-    data: {
-      phone: user.phone,
-      demoOtp: otp,
-    },
-  })
+  let extra
+  try {
+    extra = await issueOtp(user)
+  } catch (err) {
+    if (err?.code === 11000) throw new HttpError(409, 'An account with this number already exists. Please log in.')
+    throw err
+  }
+  res.json({ success: true, message: 'Account created! Verification OTP sent.', data: otpResponse(phone, extra) })
 }
 
 // Current logged in user info

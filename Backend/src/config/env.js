@@ -22,6 +22,7 @@ const read = () => ({
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
   corsOrigin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  otpMode: process.env.OTP_MODE === 'real' ? 'real' : 'demo', // demo = fixed 123456, real = random code sent by SMS
 })
 
 export const env = read()

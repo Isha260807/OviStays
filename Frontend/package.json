@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@tailwindcss/oxide-win32-x64-msvc": "^4.3.3",
-    "@vitejs/plugin-react": "^6.1.2",
-    "vite": "^8.3.5"
+    "@vitejs/plugin-react": "~5.1.4",
+    "vite": "~6.4.5"
   }
 }

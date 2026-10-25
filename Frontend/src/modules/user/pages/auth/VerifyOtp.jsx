@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useLocation, useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate, Link, Navigate } from 'react-router-dom'
 import { MoreHorizontal, ChevronLeft } from 'lucide-react'
 import { useAuthAssets } from '../../hooks/useAuthAssets.js'
 import AuthHeroBanner from '../../components/auth/AuthHeroBanner.jsx'
@@ -13,8 +13,8 @@ export default function VerifyOtp() {
   const { assets } = useAuthAssets()
   const setAuth = useAuthStore((state) => state.setAuth)
 
-  const phone = location.state?.phone || '+91 98765 43210'
-  const demoOtp = location.state?.demoOtp || '123456'
+  const phone = location.state?.phone
+  const demoOtp = location.state?.demoOtp
 
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [secondsLeft, setSecondsLeft] = useState(45)
@@ -111,6 +111,8 @@ export default function VerifyOtp() {
     setError('')
     try {
       await api.post('/user/auth/send-otp', { phone })
+      setOtp(['', '', '', '', '', ''])
+      inputsRef.current[0]?.focus()
       setSecondsLeft(45)
       setSuccessMsg('A new OTP has been sent!')
       setTimeout(() => setSuccessMsg(''), 3000)
@@ -120,6 +122,9 @@ export default function VerifyOtp() {
   }
 
   const formattedTimer = `00:${secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}`
+
+  // Opened directly (no phone from login/signup): start over
+  if (!phone) return <Navigate to="/auth/login" replace />
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col lg:flex-row overflow-x-hidden">

@@ -8,6 +8,9 @@ import { useAuthStore } from '@/core/auth/auth.store.js'
 import { useWishlist } from '@/core/wishlist/wishlist.store.js'
 import Wishlist from './pages/Wishlist/Wishlist.jsx'
 import Profile from './pages/Profile/Profile.jsx'
+import PersonalInfo from './pages/Profile/PersonalInfo.jsx'
+import SavedGuests from './pages/Profile/SavedGuests.jsx'
+import AccountSettings from './pages/Profile/AccountSettings.jsx'
 import ContentPage from './pages/Content/ContentPage.jsx'
 
 function AuthRedirect() {
@@ -32,6 +35,9 @@ export default function UserRoutes() {
       <Route path="villas/:id" element={<RequireUser><VillaDetails /></RequireUser>} />
       <Route path="wishlist" element={<RequireUser><Wishlist /></RequireUser>} />
       <Route path="profile" element={<RequireUser><Profile /></RequireUser>} />
+      <Route path="profile/personal" element={<RequireUser><PersonalInfo /></RequireUser>} />
+      <Route path="profile/guests" element={<RequireUser><SavedGuests /></RequireUser>} />
+      <Route path="profile/settings" element={<RequireUser><AccountSettings /></RequireUser>} />
       <Route path="pages/:key" element={<RequireUser><ContentPage /></RequireUser>} />
       <Route path="villas/:id/book" element={<RequireUser><BookingSoon /></RequireUser>} />
 

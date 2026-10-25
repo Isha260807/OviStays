@@ -22,11 +22,11 @@ function useVillaSearch() {
 export function MobileSearch() {
   const { form, set, submit } = useVillaSearch()
   return (
-    <form onSubmit={submit} className="md:hidden flex items-center gap-3 bg-white rounded-full pl-5 pr-2 py-2 border border-[#BFDDF0] shadow-[0_1px_3px_rgba(17,17,17,0.12)]">
-      <Search className="w-5 h-5 shrink-0" style={{ color: C.ink }} />
-      <input value={form.q} onChange={set('q')} placeholder="Search villas, cities or places..." className={`${FIELD} py-2`} aria-label="Search villas" />
-      <button type="submit" aria-label="Search" className="w-11 h-11 shrink-0 rounded-full text-white flex items-center justify-center cursor-pointer" style={{ background: C.primary }}>
-        <Search className="w-5 h-5" />
+    <form onSubmit={submit} className="md:hidden flex items-center gap-2.5 bg-white rounded-full pl-4 pr-1.5 py-1.5 border border-[#BFDDF0] shadow-[0_1px_3px_rgba(17,17,17,0.12)]">
+      <Search className="w-4 h-4 shrink-0" style={{ color: C.ink }} />
+      <input value={form.q} onChange={set('q')} placeholder="Search villas, cities or places..." className={`${FIELD} py-1`} aria-label="Search villas" />
+      <button type="submit" aria-label="Search" className="w-9 h-9 shrink-0 rounded-full text-white flex items-center justify-center cursor-pointer" style={{ background: C.primary }}>
+        <Search className="w-4 h-4" />
       </button>
     </form>
   )
