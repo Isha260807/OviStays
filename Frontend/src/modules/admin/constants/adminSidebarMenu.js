@@ -68,11 +68,40 @@ export const adminSidebarMenu = [
   },
   {
     type: "section",
+    label: "REPORT MANAGEMENT",
+    items: [
+      { type: "link", label: "Daily Sales & Cash Audit", path: "/admin/reports/daily-sales", icon: "Receipt" },
+      { type: "link", label: "Transaction Report", path: "/admin/reports/transactions", icon: "FileText" },
+      { type: "link", label: "Booking Report", path: "/admin/reports/bookings", icon: "ClipboardList" },
+      { type: "link", label: "Tax Report", path: "/admin/reports/tax", icon: "Receipt" },
+      { type: "link", label: "Admin Earning Report", path: "/admin/reports/admin-earnings", icon: "TrendingUp" },
+      { type: "link", label: "Cancellation & Refunds", path: "/admin/reports/cancellations", icon: "XCircle" },
+      {
+        type: "expandable",
+        label: "Hotel Report",
+        icon: "Building2",
+        subItems: [
+          { label: "Hotel Performance", path: "/admin/reports/hotels" },
+          { label: "Hotel Payouts", path: "/admin/reports/hotel-payouts" },
+        ],
+      },
+      {
+        type: "expandable",
+        label: "Customer Report",
+        icon: "Users",
+        subItems: [
+          { label: "Top Customers", path: "/admin/reports/customers" },
+          { label: "Guest Feedback", path: "/admin/reports/feedback" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "section",
     label: "TRANSACTION MANAGEMENT",
     items: [
       { type: "link", label: "Payments", path: "/admin/payments", icon: "CreditCard" },
       { type: "link", label: "Hotel Payouts", path: "/admin/payouts", icon: "Wallet" },
-      { type: "link", label: "Reports", path: "/admin/reports", icon: "FileText" },
     ],
   },
   {
@@ -87,9 +116,33 @@ export const adminSidebarMenu = [
     type: "section",
     label: "SYSTEM SETTINGS",
     items: [
+      { type: "link", label: "Broadcast Notification", path: "/admin/broadcast-notification", icon: "Bell" },
+      { type: "link", label: "Toggle Management", path: "/admin/toggle-management", icon: "ToggleLeft" },
       { type: "link", label: "Business Setup", path: "/admin/settings", icon: "Settings" },
       { type: "link", label: "Sub Admins", path: "/admin/sub-admins", icon: "UserCog" },
       { type: "link", label: "Profile", path: "/admin/profile", icon: "User" },
+    ],
+  },
+  {
+    type: "section",
+    label: "PAGES & SOCIAL MEDIA",
+    items: [
+      { type: "link", label: "About Us", path: "/admin/pages-social-media/about", icon: "Globe" },
+      { type: "link", label: "Terms & Conditions", path: "/admin/pages-social-media/terms", icon: "FileText" },
+      { type: "link", label: "Privacy Policy", path: "/admin/pages-social-media/privacy", icon: "Lock" },
+      { type: "link", label: "Refund Policy", path: "/admin/pages-social-media/refund", icon: "Receipt" },
+      { type: "link", label: "Cancellation Policy", path: "/admin/pages-social-media/cancellation", icon: "XCircle" },
+      { type: "link", label: "Social Media", path: "/admin/pages-social-media/social", icon: "Share2" },
+    ],
+  },
+  {
+    type: "section",
+    label: "DEVELOPER",
+    superAdminOnly: true, // hidden from sub admins; the API enforces it as well
+    items: [
+      { type: "link", label: "Env Managements", path: "/admin/developer/env", icon: "Database" },
+      { type: "link", label: "Image Setting", path: "/admin/developer/image-setting", icon: "ImageIcon" },
+      { type: "link", label: "Developer Settings", path: "/admin/developer/settings", icon: "Code" },
     ],
   },
 ]

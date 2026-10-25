@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Menu, Search, Bell, BellOff, ChevronDown, User, Settings, LogOut, Hotel } from "lucide-react"
+import { Menu, Search, Bell, BellOff, ChevronDown, User, Settings, LogOut, Hotel, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStore } from "@/core/auth/auth.store.js"
+import { useBranding } from "@/core/settings/branding.store.js"
+import { useToggles } from "@/core/settings/toggles.store.js"
+import { assetUrl } from "@/services/api/config.js"
 
 function useClickOutside(ref, onOutside) {
   useEffect(() => {
@@ -12,9 +15,72 @@ function useClickOutside(ref, onOutside) {
   }, [ref, onOutside])
 }
 
+// Quick maintenance switch next to the brand; shares its state with Toggle Management.
+function MaintenanceToggle() {
+  const { toggles, saving, load, update } = useToggles()
+
+  useEffect(() => { load().catch(() => {}) }, [load])
+  if (!toggles) return null
+
+  const on = toggles.maintenanceMode
+  const busy = saving === "maintenanceMode"
+  const handleClick = async () => {
+    try {
+      await update({ maintenanceMode: !on }, "maintenanceMode")
+      toast.success(on ? "Maintenance mode is off. Bookings are live." : "Maintenance mode is on. Guest bookings are suspended.")
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  return (
+    <div className="flex items-center pl-1 sm:pl-3 border-l border-neutral-200 ml-1 sm:ml-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-label="Toggle maintenance mode"
+        onClick={handleClick}
+        disabled={busy}
+        title={on ? "Maintenance mode is ON: guest bookings are suspended. Click to turn it off." : "Maintenance mode is OFF: the platform is live. Click to turn it on."}
+        className={`group relative flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:py-1.5 rounded-full border transition-all duration-200 select-none ${
+          on
+            ? "bg-amber-50 border-amber-300 text-amber-900 shadow-sm hover:bg-amber-100/80"
+            : "bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+        } ${busy ? "opacity-70 cursor-wait" : "cursor-pointer"}`}
+      >
+        <span className="relative flex h-2 w-2 shrink-0">
+          {on ? (
+            <>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            </>
+          ) : (
+            <span className="inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          )}
+        </span>
+        <span className="text-xs font-semibold tracking-tight hidden sm:inline">Maintenance</span>
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded leading-none ${on ? "bg-amber-200 text-amber-900" : "bg-neutral-200/80 text-neutral-600"}`}>
+          {on ? "ON" : "OFF"}
+        </span>
+        <span className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 shrink-0 items-center rounded-full transition-colors duration-200 ${on ? "bg-amber-500" : "bg-neutral-300"}`}>
+          {busy ? (
+            <Loader2 className="absolute inset-0 m-auto h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin text-white" />
+          ) : (
+            <span className={`pointer-events-none inline-block h-3 w-3 sm:h-3.5 sm:w-3.5 transform rounded-full bg-white shadow-sm transition duration-200 ${on ? "translate-x-3.5 sm:translate-x-5" : "translate-x-0.5 sm:translate-x-0.5"}`} />
+          )}
+        </span>
+      </button>
+    </div>
+  )
+}
+
 export default function AdminNavbar({ onMenuClick }) {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
+  const branding = useBranding((s) => s.settings)
+  const companyName = branding?.companyName || "OviStays"
+  const logoUrl = assetUrl(branding?.logo?.url)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const profileRef = useRef(null)
@@ -49,12 +115,17 @@ export default function AdminNavbar({ onMenuClick }) {
           </button>
           <div className="flex min-w-0 items-center cursor-pointer" onClick={() => navigate("/admin")}>
             <div className="h-10 w-10 shrink-0 rounded-lg bg-white flex items-center justify-center overflow-hidden sm:h-12 sm:w-12">
-              <Hotel className="h-6 w-6 text-red-600" />
+              {logoUrl ? (
+                <img src={logoUrl} alt={companyName} className="h-9 w-9 object-contain sm:h-10 sm:w-10" />
+              ) : (
+                <Hotel className="h-6 w-6 text-red-600" />
+              )}
             </div>
             <span className="hidden max-w-40 truncate text-red-600 font-extrabold text-xl ml-1 tracking-tight sm:block">
-              OviStays
+              {companyName}
             </span>
           </div>
+          <MaintenanceToggle />
         </div>
 
         {/* Center: search pill */}

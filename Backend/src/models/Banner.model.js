@@ -1,11 +1,12 @@
 import mongoose from 'mongoose'
 import { codePlugin } from '../utils/codePlugin.js'
+import { IMAGE_PATH_PATTERN, IMAGE_PATH_MESSAGE } from '../utils/uploadPaths.js'
 
 const bannerSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     position: { type: String, enum: ['Home Top', 'Home Middle', 'Search Page'], default: 'Home Top' },
-    imageUrl: { type: String, trim: true, default: '' },
+    imageUrl: { type: String, trim: true, default: '', match: [IMAGE_PATH_PATTERN, IMAGE_PATH_MESSAGE] },
     validTill: { type: Date },
     status: { type: String, enum: ['Active', 'Draft'], default: 'Draft', index: true },
   },

@@ -153,15 +153,15 @@ export default function Dashboard() {
               <MetricCard title="Gross revenue" value={formatCurrency(revenueTotal)} helper={`${periodLabel} booking volume`}
                 icon={<ShoppingBag className="h-5 w-5 text-emerald-600" />} accent="bg-emerald-200/40" path="/admin/payments" />
               <MetricCard title="Commission earned" value={formatCurrency(commissionTotal)} helper={`${periodLabel} hotel cut`}
-                icon={<ArrowUpRight className="h-5 w-5 text-indigo-600" />} accent="bg-indigo-200/40" path="/admin/payouts" />
+                icon={<ArrowUpRight className="h-5 w-5 text-indigo-600" />} accent="bg-indigo-200/40" path="/admin/reports/admin-earnings" />
               <MetricCard title="Platform fee" value={formatCurrency(platformFeeTotal)} helper={`Platform service fees: ${periodLabel}`}
                 icon={<CreditCard className="h-5 w-5 text-red-600" />} accent="bg-red-200/40" path="/admin/settings" />
               <MetricCard title="GST" value={formatCurrency(gstTotal)} helper={`Total tax collected: ${periodLabel}`}
-                icon={<Receipt className="h-5 w-5 text-orange-600" />} accent="bg-orange-200/40" path="/admin/reports" />
+                icon={<Receipt className="h-5 w-5 text-orange-600" />} accent="bg-orange-200/40" path="/admin/reports/tax" />
               <MetricCard title="Refunds" value={formatCurrency(refundsTotal)} helper={`Refunded bookings: ${periodLabel}`}
                 icon={<RotateCcw className="h-5 w-5 text-blue-600" />} accent="bg-blue-200/40" path="/admin/bookings/refunded" />
               <MetricCard title="Platform Total" value={formatCurrency(platformTotal, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} helper={totalRevenueHelper}
-                icon={<DollarSign className="h-5 w-5 text-emerald-600" />} accent="bg-emerald-200/50 border border-emerald-300/50" path="/admin/reports" />
+                icon={<DollarSign className="h-5 w-5 text-emerald-600" />} accent="bg-emerald-200/50 border border-emerald-300/50" path="/admin/reports/admin-earnings" />
             </div>
           </div>
 

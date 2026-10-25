@@ -26,7 +26,7 @@ const bookingPage = (title, fixedStatus) => ({
   statusEditable: true,
 })
 
-const hotelColumns = [ID, t("name", "Name"), t("city", "City"), t("owner", "Owner"), t("rooms", "Rooms"), t("rating", "Rating", "stars"), STATUS]
+const hotelColumns = [ID, t("coverImage", "Photo", "image"), t("name", "Name"), t("city", "City"), t("owner", "Owner"), t("rooms", "Rooms"), t("rating", "Rating", "stars"), STATUS]
 
 // Keys are the URL paths under /admin
 export const listConfigs = {
@@ -111,10 +111,11 @@ export const listConfigs = {
   },
   banners: {
     title: "Banners", subtitle: "Promotional banners shown in the app", endpoint: "banners",
-    columns: [ID, t("title", "Title"), t("position", "Position"), t("validTill", "Valid till"), STATUS],
+    columns: [ID, t("imageUrl", "Image", "image"), t("title", "Title"), t("position", "Position"), t("validTill", "Valid till"), STATUS],
     statusOptions: ["Active", "Draft"], statusEditable: true, addLabel: "Add Banner",
     addFields: [
       { name: "title", label: "Title", required: true, full: true },
+      { name: "imageUrl", label: "Banner image (1600 x 600 works best)", type: "image", preset: "banner", full: true },
       { name: "position", label: "Position", type: "select", options: ["Home Top", "Home Middle", "Search Page"] },
       { name: "validTill", label: "Valid till", type: "date" },
     ],
@@ -145,12 +146,6 @@ export const listConfigs = {
       { name: "amount", label: "Amount", type: "number", required: true },
     ],
   },
-  reports: {
-    title: "Reports", subtitle: "Live summaries calculated from current data", endpoint: "reports",
-    columns: [t("name", "Report"), t("type", "Type"), t("records", "Records"), t("value", "Value", "money"), t("generatedOn", "Generated on")],
-    deletable: false,
-  },
-
   "support-tickets": {
     title: "Support Tickets", subtitle: "Issues raised by guests and hotels", endpoint: "support-tickets",
     columns: [ID, t("subject", "Subject"), t("raisedBy", "Raised by"), t("priority", "Priority"), STATUS],
@@ -186,6 +181,7 @@ export const formConfigs = {
         fields: [
           { name: "name", label: "Hotel Name", required: true },
           { name: "owner", label: "Owner Name", required: true },
+          { name: "coverImage", label: "Cover image", type: "image", preset: "hotel", full: true },
           { name: "email", label: "Email", type: "email" },
           { name: "phone", label: "Phone" },
           { name: "description", label: "Description", type: "textarea", full: true },

@@ -8,6 +8,7 @@ import Modal from "../components/ui/Modal.jsx"
 import { FormGrid, cleanValues, buttonPrimary, buttonOutline } from "../components/ui/FormFields.jsx"
 import { adminAPI } from "../services/adminAPI.js"
 import { errorMessage } from "@/services/api/axios.js"
+import { assetUrl } from "@/services/api/config.js"
 
 const PAGE_SIZE = 10
 
@@ -18,6 +19,9 @@ function renderCell(col, row) {
   const v = row[col.key]
   if (v === null || v === undefined || v === "") return <span className="text-neutral-400">-</span>
   if (col.type === "status") return <StatusBadge value={v} />
+  if (col.type === "image") {
+    return <img src={assetUrl(v)} alt="" loading="lazy" className="h-10 w-14 rounded object-cover border border-neutral-200" />
+  }
   if (col.type === "money") return `₹${Number(v).toLocaleString("en-IN")}`
   if (col.type === "stars") {
     const n = Math.round(Number(v))

@@ -51,8 +51,8 @@ export const resources = {
   hotels: {
     model: Hotel,
     searchFields: ['refId', 'name', 'owner', 'city'],
-    createFields: ['name', 'owner', 'email', 'phone', 'description', 'address', 'city', 'state', 'pincode', 'rooms', 'startingPrice', 'checkInTime', 'checkOutTime'],
-    updateFields: ['status', 'name', 'owner', 'email', 'phone', 'description', 'address', 'city', 'state', 'pincode', 'rooms', 'startingPrice', 'checkInTime', 'checkOutTime'],
+    createFields: ['name', 'owner', 'coverImage', 'email', 'phone', 'description', 'address', 'city', 'state', 'pincode', 'rooms', 'startingPrice', 'checkInTime', 'checkOutTime'],
+    updateFields: ['status', 'name', 'owner', 'coverImage', 'email', 'phone', 'description', 'address', 'city', 'state', 'pincode', 'rooms', 'startingPrice', 'checkInTime', 'checkOutTime'],
     beforeCreate: (data) => { data.status = 'Active' }, // hotels added by an admin skip the approval queue
     optionLabel: (d) => `${d.name} (${d.city})`,
     toRow: strip,
