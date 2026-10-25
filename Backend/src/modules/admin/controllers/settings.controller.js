@@ -1,6 +1,6 @@
 import Settings from '../../../models/Settings.model.js'
 
-const FIELDS = ['companyName', 'email', 'phone', 'address', 'currency', 'commissionRate', 'platformFee', 'gstRate', 'cancelHours']
+const FIELDS = ['companyName', 'email', 'phone', 'address', 'currency', 'commissionRate', 'platformFee', 'gstRate', 'cancelHours', 'authAssets']
 
 export async function getSettings(req, res) {
   const s = await Settings.get()

@@ -4,11 +4,13 @@ import { codePlugin } from '../../../utils/codePlugin.js'
 // Guest / customer account.
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true, lowercase: true, unique: true },
-    phone: { type: String, trim: true, default: '' },
+    name: { type: String, trim: true, default: 'Guest Traveler' },
+    email: { type: String, trim: true, lowercase: true, default: '' },
+    phone: { type: String, trim: true, default: '', index: true },
     passwordHash: { type: String, select: false },
     status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+    otp: { type: String, select: false },
+    otpExpiresAt: { type: Date, select: false },
   },
   { timestamps: true }
 )

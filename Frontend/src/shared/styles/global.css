@@ -1,7 +1,20 @@
 @import "tailwindcss";
+@import "./auth.css";
 
 @theme {
-  --color-primary: #e52e2e;
+  --color-primary: #55B8F5;
+  --color-primary-hover: #289FE8;
+  --color-primary-active: #168AD3;
+  --color-light-blue: #DDF3FF;
+  --color-soft-blue: #EEF9FF;
+  --color-bg-brand: #F5FAFE;
+  --color-brand-black: #111111;
+  --color-brand-white: #FFFFFF;
+  --color-muted-text: #6B7280;
+  --color-border-brand: #E2EDF5;
+  --color-success: #15803D;
+  --color-danger: #DC2626;
+  --font-serif: "Playfair Display", Georgia, serif;
 }
 
 /* Admin panel: AdminLayout adds "admin-compact" to <html> to scale text down.

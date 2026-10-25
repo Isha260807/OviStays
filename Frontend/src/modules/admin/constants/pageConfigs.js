@@ -215,8 +215,29 @@ export const formConfigs = {
   settings: {
     title: "Business Setup", subtitle: "Company and platform settings", keepEmpty: true,
     successMessage: "Settings saved",
-    load: () => adminAPI.getSettings(),
-    save: (values) => adminAPI.saveSettings(values),
+    load: async () => {
+      const data = await adminAPI.getSettings()
+      return {
+        ...data,
+        welcomeTravelerImage: data.authAssets?.welcomeTravelerImage || '/assets/auth/traveler_hero.jpg',
+        welcomeCard1: data.authAssets?.welcomeCard1 || '/assets/auth/card_beach.jpg',
+        welcomeCard2: data.authAssets?.welcomeCard2 || '/assets/auth/card_pool.jpg',
+        welcomeCard3: data.authAssets?.welcomeCard3 || '/assets/auth/card_patio.jpg',
+        authHeroBanner: data.authAssets?.authHeroBanner || '/assets/auth/hotel_hero.jpg',
+        tagText: data.authAssets?.tagText || '#Luxury',
+      }
+    },
+    save: (values) => {
+      const authAssets = {
+        welcomeTravelerImage: values.welcomeTravelerImage,
+        welcomeCard1: values.welcomeCard1,
+        welcomeCard2: values.welcomeCard2,
+        welcomeCard3: values.welcomeCard3,
+        authHeroBanner: values.authHeroBanner,
+        tagText: values.tagText,
+      }
+      return adminAPI.saveSettings({ ...values, authAssets })
+    },
     sections: [
       {
         title: "Company",
@@ -235,6 +256,17 @@ export const formConfigs = {
           { name: "platformFee", label: "Platform fee per booking", type: "number" },
           { name: "gstRate", label: "GST (%)", type: "number" },
           { name: "cancelHours", label: "Free cancellation window (hours)", type: "number" },
+        ],
+      },
+      {
+        title: "Auth & App Visuals (Dynamic Images)",
+        fields: [
+          { name: "welcomeTravelerImage", label: "Welcome Cutout Traveler Image URL / Path", full: true },
+          { name: "welcomeCard1", label: "Welcome Beach Card Image URL / Path", full: true },
+          { name: "welcomeCard2", label: "Welcome Pool Card Image URL / Path", full: true },
+          { name: "welcomeCard3", label: "Welcome Patio Card Image URL / Path", full: true },
+          { name: "authHeroBanner", label: "Auth Hero Hotel Suite Image URL / Path", full: true },
+          { name: "tagText", label: "Luxury Tag Text (e.g. #Luxury)" },
         ],
       },
     ],

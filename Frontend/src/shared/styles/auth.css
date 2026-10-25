@@ -1,0 +1,208 @@
+/* ==========================================================================
+   OviStays Centralized Auth Theme & Responsive Styles
+   Official Palette:
+     Primary:    #55B8F5
+     Hover:      #289FE8
+     Active:     #168AD3
+     Light Blue: #DDF3FF
+     Soft Blue:  #EEF9FF
+     Background: #FFFFFF (Clean Pure White)
+     Black:      #111111
+     White:      #FFFFFF
+     Muted Text: #6B7280
+     Border:     #E2EDF5
+     Success:    #15803D
+     Danger:     #DC2626
+   ========================================================================== */
+
+:root {
+  --color-primary: #55B8F5;
+  --color-primary-hover: #289FE8;
+  --color-primary-active: #168AD3;
+  --color-light-blue: #DDF3FF;
+  --color-soft-blue: #EEF9FF;
+  --color-app-bg: #FFFFFF;
+  --color-card-bg: #FFFFFF;
+  --color-text-title: #111111;
+  --color-text-muted: #6B7280;
+  --color-border: #E2EDF5;
+  --color-success: #15803D;
+  --color-danger: #DC2626;
+  --font-serif-display: "Playfair Display", Georgia, serif;
+}
+
+/* Luxury Serif Typography */
+.font-serif-display {
+  font-family: var(--font-serif-display);
+}
+
+/* Background is Clean Pure White */
+.auth-page-wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFFFFF;
+  width: 100%;
+}
+
+/* Mobile-First Frame (used for Welcome page and mobile view) */
+.auth-card-frame {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #FFFFFF;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+/* Landscape Layout for Laptop / Desktop Screen */
+.auth-landscape-wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  background-color: #FFFFFF;
+}
+
+/* Primary OviStays Button */
+.btn-luxury-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.95rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 20px -3px rgba(85, 184, 245, 0.38);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.btn-luxury-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px -3px rgba(40, 159, 232, 0.45);
+}
+
+.btn-luxury-primary:active:not(:disabled) {
+  background-color: var(--color-primary-active);
+  transform: translateY(0);
+  box-shadow: 0 4px 12px -2px rgba(22, 138, 211, 0.35);
+}
+
+.btn-luxury-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Centralized Input Field */
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--color-soft-blue);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.auth-input-wrapper:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(85, 184, 245, 0.22);
+  background-color: #FFFFFF;
+}
+
+.auth-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  color: var(--color-text-title);
+  padding: 0.85rem 1rem;
+}
+
+.auth-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Social Login Button */
+.auth-social-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.auth-social-circle:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(85, 184, 245, 0.2);
+}
+
+/* Circular Icon Badge for Headers */
+.auth-header-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem auto;
+  box-shadow: 0 8px 20px rgba(85, 184, 245, 0.35);
+}
+
+/* OTP 6-Digit Box */
+.otp-digit-box {
+  width: 46px;
+  height: 52px;
+  border-radius: 12px;
+  background-color: var(--color-soft-blue);
+  border: 1.5px solid var(--color-border);
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--color-text-title);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.otp-digit-box:focus {
+  border-color: var(--color-primary);
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(85, 184, 245, 0.25);
+  transform: scale(1.05);
+}
+
+/* Wavy organic bottom mask for Hero (Mobile) */
+.hero-wavy-svg {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: auto;
+  fill: #FFFFFF;
+  z-index: 10;
+  pointer-events: none;
+}
