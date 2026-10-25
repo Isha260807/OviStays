@@ -7,7 +7,7 @@ import Review from '../../../models/Review.model.js'
 // Public data for the user Home page: the saved layout with every reference resolved.
 // A section with nothing to show (no active villas, expired coupon, ...) is left out.
 
-const card = (h) => ({
+export const villaCard = (h) => ({
   id: String(h._id),
   name: h.name,
   city: h.city,
@@ -23,7 +23,7 @@ async function hotelsByIds(idList) {
   if (!idList?.length) return []
   const docs = await Hotel.find({ _id: { $in: idList }, status: 'Active' }).lean()
   const byId = new Map(docs.map((d) => [String(d._id), d]))
-  return idList.map((i) => byId.get(String(i))).filter(Boolean).map(card)
+  return idList.map((i) => byId.get(String(i))).filter(Boolean).map(villaCard)
 }
 
 // "Hill Stations" -> "hill-stations"

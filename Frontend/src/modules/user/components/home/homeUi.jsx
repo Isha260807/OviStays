@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Heart, Star } from 'lucide-react'
+import { useWishlist } from '@/core/wishlist/wishlist.store.js'
 
 // Home page palette: same blue theme as the auth pages (shared/styles/auth.css)
 export const C = {
@@ -39,19 +39,13 @@ export function Rail({ children, cols = 'lg:grid-cols-4' }) {
   )
 }
 
-const WISH_KEY = 'ovistays-wishlist'
-const readWish = () => {
-  try { return JSON.parse(localStorage.getItem(WISH_KEY)) || [] } catch { return [] }
-}
-
 export function HeartButton({ id, className = '' }) {
-  const [on, setOn] = useState(() => readWish().includes(id))
+  const on = useWishlist((s) => s.ids.includes(id))
+  const toggleWish = useWishlist((s) => s.toggle)
   const toggle = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    const next = on ? readWish().filter((x) => x !== id) : [...readWish(), id]
-    try { localStorage.setItem(WISH_KEY, JSON.stringify(next)) } catch { /* private mode */ }
-    setOn(!on)
+    toggleWish(id)
   }
   return (
     <button

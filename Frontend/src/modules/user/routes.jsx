@@ -3,7 +3,12 @@ import { Welcome, Login, Signup, VerifyOtp } from './pages/auth/index.js'
 import { Home } from './pages/Home/index.js'
 import VillaDetails from './pages/VillaDetails/VillaDetails.jsx'
 import BookingSoon from './pages/VillaDetails/BookingSoon.jsx'
+import { useEffect } from 'react'
 import { useAuthStore } from '@/core/auth/auth.store.js'
+import { useWishlist } from '@/core/wishlist/wishlist.store.js'
+import Wishlist from './pages/Wishlist/Wishlist.jsx'
+import Profile from './pages/Profile/Profile.jsx'
+import ContentPage from './pages/Content/ContentPage.jsx'
 
 function AuthRedirect() {
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
@@ -13,6 +18,10 @@ function AuthRedirect() {
 // Pages for signed-in guests; everyone else goes to the auth screens
 function RequireUser({ children }) {
   const signedIn = useAuthStore((s) => Boolean(s.token) && s.role === 'user')
+  useEffect(() => {
+    if (signedIn) useWishlist.getState().load()
+    else useWishlist.getState().clear()
+  }, [signedIn])
   return signedIn ? children : <AuthRedirect />
 }
 
@@ -21,6 +30,9 @@ export default function UserRoutes() {
     <Routes>
       <Route index element={<RequireUser><Home /></RequireUser>} />
       <Route path="villas/:id" element={<RequireUser><VillaDetails /></RequireUser>} />
+      <Route path="wishlist" element={<RequireUser><Wishlist /></RequireUser>} />
+      <Route path="profile" element={<RequireUser><Profile /></RequireUser>} />
+      <Route path="pages/:key" element={<RequireUser><ContentPage /></RequireUser>} />
       <Route path="villas/:id/book" element={<RequireUser><BookingSoon /></RequireUser>} />
 
       {/* User Auth Routes */}

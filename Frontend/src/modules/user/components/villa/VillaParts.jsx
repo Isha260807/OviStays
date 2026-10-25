@@ -4,6 +4,7 @@ import {
   Dumbbell, Heart, MapPin, Play, Share2, Snowflake, Sparkles, Star, Tv, Users, Utensils, Waves, Wifi, ParkingSquare, X, Map as MapIcon,
 } from 'lucide-react'
 import { C } from '../home/homeUi.jsx'
+import { useWishlist } from '@/core/wishlist/wishlist.store.js'
 import { formatPrice } from '../../data/homeData.js'
 
 const card = 'bg-white rounded-2xl border shadow-[0_6px_20px_rgba(22,138,211,0.06)]'
@@ -19,11 +20,6 @@ const AMENITY_ICONS = [
 ]
 const amenityIcon = (name) => (AMENITY_ICONS.find(([re]) => re.test(name)) || [null, Sparkles])[1]
 
-const WISH_KEY = 'ovistays-wishlist'
-const readWish = () => {
-  try { return JSON.parse(localStorage.getItem(WISH_KEY)) || [] } catch { return [] }
-}
-
 // ---------- Header actions ----------
 export function CircleButton({ children, label, onClick, className = '' }) {
   return (
@@ -34,14 +30,10 @@ export function CircleButton({ children, label, onClick, className = '' }) {
 }
 
 export function WishButton({ id }) {
-  const [on, setOn] = useState(() => readWish().includes(id))
-  const toggle = () => {
-    const next = on ? readWish().filter((x) => x !== id) : [...readWish(), id]
-    try { localStorage.setItem(WISH_KEY, JSON.stringify(next)) } catch { /* private mode */ }
-    setOn(!on)
-  }
+  const on = useWishlist((s) => s.ids.includes(id))
+  const toggle = useWishlist((s) => s.toggle)
   return (
-    <CircleButton label={on ? 'Remove from favourites' : 'Add to favourites'} onClick={toggle}>
+    <CircleButton label={on ? 'Remove from favourites' : 'Add to favourites'} onClick={() => toggle(id)}>
       <Heart className="w-5 h-5" fill={on ? C.primaryDark : 'none'} stroke={on ? C.primaryDark : 'currentColor'} />
     </CircleButton>
   )

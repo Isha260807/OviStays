@@ -10,6 +10,7 @@ const publicUser = (u) => ({
   name: u.name,
   email: u.email,
   phone: u.phone,
+  photo: u.photo || '',
   status: u.status,
   createdAt: u.createdAt,
 })
