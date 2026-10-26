@@ -34,3 +34,8 @@ export function otpMatches(otp, storedHash) {
 export async function sendSms(phone, otp) {
   throw new Error(`SMS provider not configured; cannot send OTP to ${phone}`)
 }
+
+// Plug an email provider (SES, SendGrid, SMTP, ...) in here. Only called in real mode.
+export async function sendEmail(email, otp) {
+  throw new Error(`Email provider not configured; cannot send a code to ${email}`)
+}

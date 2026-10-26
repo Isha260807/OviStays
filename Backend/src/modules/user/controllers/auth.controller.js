@@ -1,12 +1,14 @@
 import User from '../models/User.model.js'
 import Settings from '../../../models/Settings.model.js'
-import { signAccessToken } from '../../../core/auth/token.util.js'
-import { ROLES } from '../../../core/roles/roles.js'
+import UserSession from '../models/UserSession.model.js'
 import { badRequest, HttpError } from '../../../utils/httpError.js'
 import {
   OTP_MAX_ATTEMPTS, OTP_RESEND_COOLDOWN_MS, OTP_TTL_MS,
   generateOtp, hashOtp, isRealOtp, isValidPhone, normalizePhone, otpMatches, sendSms,
 } from '../services/otp.service.js'
+import { endAllSessions, endSession, listSessions, refreshSession, startSession } from '../services/session.service.js'
+
+export const TERMS_VERSION = '1.0'
 
 const publicUser = (u) => ({
   _id: u._id,
@@ -115,15 +117,17 @@ export async function verifyOtp(req, res) {
   user.otpExpiresAt = undefined
   user.otpAttempts = 0
   user.phoneVerified = true
+  user.lastLoginAt = new Date()
   await user.save()
 
-  const token = signAccessToken({ id: String(user._id), role: ROLES.USER }, '30d')
+  const { token, refreshToken } = await startSession(user, req)
 
   res.json({
     success: true,
     message: 'Login successful',
     data: {
       token,
+      refreshToken,
       user: publicUser(user),
     },
   })
@@ -135,6 +139,10 @@ export async function register(req, res) {
   if (!name) throw badRequest('Name and phone number are required')
   const phone = readPhone(req.body)
   const email = String(req.body.email || '').trim().toLowerCase()
+  if (req.body.acceptTerms !== true) throw badRequest('Please accept the Terms & Conditions and Privacy Policy to continue')
+
+  const settings = await Settings.get()
+  if (!settings.userRegistration) throw new HttpError(403, 'New sign-ups are paused right now. Please try again later.')
 
   let user = await User.findOne({ phone }).select('+otpSentAt')
   if (user?.phoneVerified) {
@@ -148,6 +156,8 @@ export async function register(req, res) {
     user = new User({ name, phone, email })
   }
   assertCanSend(user)
+  user.termsAcceptedAt = new Date()
+  user.termsVersion = TERMS_VERSION
 
   let extra
   try {
@@ -157,6 +167,34 @@ export async function register(req, res) {
     throw err
   }
   res.json({ success: true, message: 'Account created! Verification OTP sent.', data: otpResponse(phone, extra) })
+}
+
+// Swap the refresh token for a new access + refresh token pair
+export async function refresh(req, res) {
+  const tokens = await refreshSession(req.body?.refreshToken, req)
+  res.json({ success: true, data: tokens })
+}
+
+// Log out this device
+export async function logout(req, res) {
+  await endSession(req.body?.refreshToken)
+  res.json({ success: true, message: 'Logged out' })
+}
+
+// Log out every device (or every other device with { others: true })
+export async function logoutAll(req, res) {
+  await endAllSessions(req.auth.id, req.body?.others ? req.auth.sid : undefined)
+  res.json({ success: true, message: req.body?.others ? 'Logged out of all other devices' : 'Logged out of all devices' })
+}
+
+export async function sessions(req, res) {
+  res.json({ success: true, data: await listSessions(req.auth.id, req.auth.sid) })
+}
+
+export async function revokeSession(req, res) {
+  const result = await UserSession.updateOne({ _id: req.params.sessionId, user: req.auth.id, revokedAt: null }, { revokedAt: new Date() })
+  if (!result.matchedCount) throw new HttpError(404, 'Device not found')
+  res.json({ success: true })
 }
 
 // Current logged in user info

@@ -13,7 +13,7 @@ export default function Signup() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    agreeTerms: true,
+    agreeTerms: false,
   })
   const [countryCode, setCountryCode] = useState('+91')
   const [loading, setLoading] = useState(false)
@@ -53,6 +53,7 @@ export default function Signup() {
       const response = await api.post('/user/auth/register', {
         name: formData.name.trim(),
         phone: fullPhone,
+        acceptTerms: true,
       })
 
       // Navigate to OTP verification page

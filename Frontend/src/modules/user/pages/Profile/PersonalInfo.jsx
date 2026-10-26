@@ -4,6 +4,7 @@ import api from '@/services/api/axios.js'
 import { assetUrl } from '@/services/api/config.js'
 import { uploadImage, IMAGE_TYPES, MAX_IMAGE_MB } from '@/services/api/uploads.js'
 import { useAuthStore } from '@/core/auth/auth.store.js'
+import { useProfile } from '@/core/profile/profile.store.js'
 import { C } from '../../components/home/homeUi.jsx'
 import { AccountShell, Field, Notice, card, cardBorder, errorText, inputCls, primaryBtn } from '../../components/account/AccountUi.jsx'
 
@@ -12,7 +13,6 @@ const todayYmd = () => new Date().toISOString().slice(0, 10)
 export default function PersonalInfo() {
   const fileRef = useRef(null)
   const authUser = useAuthStore((s) => s.user)
-  const setUser = useAuthStore((s) => s.setUser)
 
   const [profile, setProfile] = useState(authUser)
   const [form, setForm] = useState({ name: authUser?.name || '', email: authUser?.email || '', dob: '', gender: '' })
@@ -24,11 +24,11 @@ export default function PersonalInfo() {
 
   useEffect(() => {
     let alive = true
-    api.get('/user/profile')
-      .then((res) => {
+    useProfile.getState().load()
+      .then((p) => {
         if (!alive) return
-        setProfile(res.data.data)
-        fill(res.data.data)
+        setProfile(p)
+        fill(p)
       })
       .catch(() => {})
     return () => { alive = false }
@@ -38,7 +38,7 @@ export default function PersonalInfo() {
     const res = await api.patch('/user/profile', patch)
     const p = res.data.data
     setProfile(p)
-    setUser({ ...authUser, ...p })
+    useProfile.getState().setProfile(p)
     return p
   }
 

@@ -5,8 +5,12 @@ import hotelRoutes from '../modules/hotel/routes/index.js'
 import uploadRoutes from '../core/uploads/upload.routes.js'
 import settingsRoutes from '../core/settings/settings.routes.js'
 import pagesRoutes from '../core/pages/pages.routes.js'
+import { rateLimit } from '../core/security/rateLimit.js'
 
 const router = Router()
+
+// Broad guard against floods; the login routes have tighter limits of their own
+router.use(rateLimit({ windowMs: 60 * 1000, max: 600 }))
 
 router.get('/health', (req, res) => res.json({ success: true, status: 'ok' }))
 router.use('/admin', adminRoutes)

@@ -4,7 +4,11 @@ import Hotel from '../../../models/Hotel.model.js'
 import { IMAGE_PATH_PATTERN } from '../../../utils/uploadPaths.js'
 import { badRequest, HttpError } from '../../../utils/httpError.js'
 import { villaCard } from './home.controller.js'
-import { GENDERS, MAX_GUESTS } from '../models/User.model.js'
+import { GENDERS, ID_TYPES, MAX_GUESTS } from '../models/User.model.js'
+import {
+  OTP_MAX_ATTEMPTS, OTP_TTL_MS, generateOtp, hashOtp, isRealOtp, otpMatches, sendEmail,
+} from '../services/otp.service.js'
+import { endAllSessions } from '../services/session.service.js'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE = /^\+?[\d\s-]{7,18}$/
@@ -20,6 +24,7 @@ const profileView = (u) => ({
   photo: u.photo || '',
   dob: ymd(u.dob),
   gender: u.gender || '',
+  emailVerified: Boolean(u.email) && Boolean(u.emailVerified),
   status: u.status,
   createdAt: u.createdAt,
 })
@@ -51,6 +56,7 @@ export async function updateProfile(req, res) {
   if (b.email !== undefined) {
     const email = String(b.email).trim().toLowerCase()
     if (email && !EMAIL.test(email)) throw badRequest('Please enter a valid email address')
+    if (email !== user.email) user.emailVerified = false
     user.email = email
   }
   if (b.photo !== undefined) {
@@ -87,6 +93,7 @@ export async function deleteAccount(req, res) {
   user.wishlist = []
   user.guests = []
   await user.save()
+  await endAllSessions(user._id)
   res.json({ success: true, message: 'Your account has been deleted' })
 }
 
@@ -165,4 +172,106 @@ export async function removeFromWishlist(req, res) {
   const id = await villaIdFrom(req)
   await User.updateOne({ _id: req.auth.id }, { $pull: { wishlist: id } })
   res.json({ success: true })
+}
+
+// ---- email verification ----------------------------------------------------------------------
+
+// Sends a code to the email saved on the profile (demo mode: fixed code, nothing is sent)
+export async function sendEmailOtp(req, res) {
+  const user = await User.findById(req.auth.id).select('+emailOtpExpiresAt')
+  if (!user || user.status !== 'Active') throw new HttpError(401, 'User session invalid or expired')
+  if (!user.email) throw badRequest('Add your email address first')
+  if (user.emailVerified) throw badRequest('Your email is already verified')
+
+  const otp = generateOtp()
+  user.emailOtp = hashOtp(otp)
+  user.emailOtpExpiresAt = new Date(Date.now() + OTP_TTL_MS)
+  user.emailOtpAttempts = 0
+  await user.save()
+
+  if (isRealOtp()) await sendEmail(user.email, otp)
+  res.json({ success: true, message: `Verification code sent to ${user.email}`, data: { email: user.email, ...(isRealOtp() ? {} : { demoOtp: otp }) } })
+}
+
+export async function verifyEmailOtp(req, res) {
+  const user = await User.findById(req.auth.id).select('+emailOtp +emailOtpExpiresAt +emailOtpAttempts')
+  if (!user || user.status !== 'Active') throw new HttpError(401, 'User session invalid or expired')
+  const otp = String(req.body.otp || '').trim()
+  if (!otp) throw badRequest('Please enter the code')
+  if (!user.emailOtp) throw badRequest('No code requested. Please request a new one.')
+  if (user.emailOtpAttempts >= OTP_MAX_ATTEMPTS) throw new HttpError(429, 'Too many wrong attempts. Please request a new code.')
+  if (!user.emailOtpExpiresAt || new Date() > user.emailOtpExpiresAt) throw badRequest('The code has expired. Please request a new one.')
+  if (!otpMatches(otp, user.emailOtp)) {
+    user.emailOtpAttempts += 1
+    await user.save()
+    throw badRequest('Invalid code. Please check and try again.')
+  }
+
+  user.emailVerified = true
+  user.emailOtp = undefined
+  user.emailOtpExpiresAt = undefined
+  user.emailOtpAttempts = 0
+  await user.save()
+  res.json({ success: true, message: 'Email verified', data: profileView(user) })
+}
+
+// ---- billing and ID --------------------------------------------------------------------------
+
+const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
+
+const billingView = (u) => ({
+  business: { companyName: u.business?.companyName || '', gstin: u.business?.gstin || '', address: u.business?.address || '' },
+  idProof: { type: u.idProof?.type || '', last4: u.idProof?.last4 || '', holderName: u.idProof?.holderName || '' },
+})
+
+export async function getBilling(req, res) {
+  res.json({ success: true, data: billingView(await currentUser(req)) })
+}
+
+export async function updateBilling(req, res) {
+  const user = await currentUser(req)
+  const b = req.body || {}
+
+  if (b.business) {
+    const companyName = String(b.business.companyName ?? '').trim()
+    const gstin = String(b.business.gstin ?? '').trim().toUpperCase()
+    const address = String(b.business.address ?? '').trim()
+    if (gstin && !GSTIN.test(gstin)) throw badRequest('Please enter a valid 15-character GSTIN')
+    if (gstin && !companyName) throw badRequest('Please enter the company name for this GSTIN')
+    if (companyName.length > 100) throw badRequest('Company name is too long')
+    if (address.length > 250) throw badRequest('Address is too long')
+    user.business = { companyName, gstin, address }
+  }
+
+  if (b.idProof) {
+    const type = String(b.idProof.type ?? '').trim()
+    // Only the last 4 digits are kept, so a full number typed in is cut down
+    const last4 = String(b.idProof.last4 ?? '').replace(/\s/g, '').slice(-4).toUpperCase()
+    const holderName = String(b.idProof.holderName ?? '').trim()
+    if (!ID_TYPES.includes(type)) throw badRequest('Please choose a valid ID type')
+    if (type && !/^[A-Z0-9]{4}$/.test(last4)) throw badRequest('Please enter the last 4 characters of your ID number')
+    if (holderName.length > 50) throw badRequest('Name on ID is too long')
+    user.idProof = type ? { type, last4, holderName } : { type: '', last4: '', holderName: '' }
+  }
+
+  await user.save()
+  res.json({ success: true, message: 'Details saved', data: billingView(user) })
+}
+
+// ---- notification preferences ----------------------------------------------------------------
+
+const PREFERENCE_KEYS = ['bookingUpdates', 'offers', 'email', 'sms', 'push']
+const preferencesView = (u) => Object.fromEntries(PREFERENCE_KEYS.map((k) => [k, u.preferences?.[k] !== false]))
+
+export async function getPreferences(req, res) {
+  res.json({ success: true, data: preferencesView(await currentUser(req)) })
+}
+
+export async function updatePreferences(req, res) {
+  const user = await currentUser(req)
+  for (const key of PREFERENCE_KEYS) {
+    if (req.body?.[key] !== undefined) user.set(`preferences.${key}`, req.body[key] === true)
+  }
+  await user.save()
+  res.json({ success: true, message: 'Preferences saved', data: preferencesView(user) })
 }

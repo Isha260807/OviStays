@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, Heart, LogOut, Phone, Settings, ShieldCheck, User, Users } from 'lucide-react'
-import api from '@/services/api/axios.js'
+import { Bell, Briefcase, ChevronRight, FileText, Heart, LifeBuoy, Lock, LogOut, Phone, Settings, ShieldCheck, Star, User, Users } from 'lucide-react'
 import { assetUrl } from '@/services/api/config.js'
 import { useAuthStore } from '@/core/auth/auth.store.js'
+import { logoutUser } from '@/core/auth/logout.js'
+import { useProfile } from '@/core/profile/profile.store.js'
 import { useWishlist } from '@/core/wishlist/wishlist.store.js'
 import { HomeNavbar, BottomNav } from '../../components/home/HomeNav.jsx'
 import { C } from '../../components/home/homeUi.jsx'
@@ -11,8 +12,14 @@ import { card, cardBorder } from '../../components/account/AccountUi.jsx'
 
 const MENU = [
   { to: '/profile/personal', icon: User, title: 'Personal Information', subtitle: 'Name, email, photo and date of birth' },
+  { to: '/bookings', icon: Briefcase, title: 'My Bookings', subtitle: 'Upcoming, past and cancelled stays' },
   { to: '/wishlist', icon: Heart, title: 'My Wishlist', subtitle: 'Saved favourite villas' },
+  { to: '/profile/reviews', icon: Star, title: 'My Reviews', subtitle: 'Ratings you gave after your stays' },
   { to: '/profile/guests', icon: Users, title: 'Saved Guest Details', subtitle: 'Traveller names and contact details' },
+  { to: '/profile/billing', icon: FileText, title: 'Billing & ID', subtitle: 'GST details and ID proof for check-in' },
+  { to: '/profile/notifications', icon: Bell, title: 'Notification Settings', subtitle: 'Choose what we send and how' },
+  { to: '/profile/security', icon: Lock, title: 'Login & Security', subtitle: 'Verify email and manage your devices' },
+  { to: '/support', icon: LifeBuoy, title: 'Help & Support', subtitle: 'FAQs and talk to our team' },
   { to: '/profile/settings', icon: Settings, title: 'Settings & Policies', subtitle: 'Terms, privacy and your account' },
 ]
 
@@ -39,23 +46,13 @@ function MenuRow({ to, icon: Icon, title, subtitle, onClick, danger, badge }) {
 export default function Profile() {
   const navigate = useNavigate()
   const authUser = useAuthStore((s) => s.user)
-  const setUser = useAuthStore((s) => s.setUser)
-  const clearAuth = useAuthStore((s) => s.clearAuth)
   const favourites = useWishlist((s) => s.ids.length)
 
-  // Keep the saved copy (name, photo) fresh
-  useEffect(() => {
-    let alive = true
-    api.get('/user/profile')
-      .then((res) => alive && setUser({ ...authUser, ...res.data.data }))
-      .catch(() => {})
-    return () => { alive = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Keep the saved copy (name, photo) fresh; the store only asks the server when its copy is old
+  useEffect(() => { useProfile.getState().load().catch(() => {}) }, [])
 
   const logout = () => {
-    clearAuth()
-    useWishlist.getState().clear()
+    logoutUser()
     navigate('/auth/login', { replace: true })
   }
 

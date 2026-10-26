@@ -1,6 +1,8 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Bell, Compass, Briefcase, Heart, User, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/core/auth/auth.store.js'
+import { logoutUser } from '@/core/auth/logout.js'
+import { useUnreadCount } from '../../hooks/useUnreadCount.js'
 import { C } from './homeUi.jsx'
 
 const DESKTOP_LINKS = [
@@ -33,11 +35,11 @@ export function Logo({ light = false }) {
 export function HomeNavbar() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const clearAuth = useAuthStore((s) => s.clearAuth)
+  const unread = useUnreadCount()
   const initial = (user?.name || 'G').trim().charAt(0).toUpperCase()
 
   const logout = () => {
-    clearAuth()
+    logoutUser()
     navigate('/auth/login', { replace: true })
   }
 
@@ -59,8 +61,9 @@ export function HomeNavbar() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <Link to="/notifications" aria-label="Notifications" className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow" style={{ color: C.ink }}>
+          <Link to="/notifications" aria-label="Notifications" className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow" style={{ color: C.ink }}>
             <Bell className="w-5 h-5" />
+            {unread > 0 && <span className="absolute top-2 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white" />}
           </Link>
           <Link to="/profile" className="flex items-center gap-2 rounded-full bg-white pl-1.5 pr-4 py-1.5 shadow-sm hover:shadow">
             <span className="w-8 h-8 rounded-full text-white text-sm font-bold flex items-center justify-center" style={{ background: C.primary }}>{initial}</span>

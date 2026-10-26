@@ -91,8 +91,8 @@ export default function VerifyOtp() {
       })
 
       if (response.data?.success) {
-        const { token, user } = response.data.data
-        setAuth({ token, user, role: 'user' })
+        const { token, refreshToken, user } = response.data.data
+        setAuth({ token, refreshToken, user, role: 'user' })
         setSuccessMsg('Logged in successfully!')
 
         setTimeout(() => {

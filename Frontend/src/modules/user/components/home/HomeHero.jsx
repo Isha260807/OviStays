@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Bell, CalendarDays, MapPin, Search, Users } from 'lucide-react'
 import { C } from './homeUi.jsx'
 import { DEFAULT_HERO } from '../../data/homeData.js'
+import { useUnreadCount } from '../../hooks/useUnreadCount.js'
 
 const FIELD = 'w-full bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-[#9CA3AF]'
 
@@ -77,6 +78,7 @@ function DesktopSearch() {
 }
 
 export default function HomeHero({ hero }) {
+  const unread = useUnreadCount()
   const h = { ...DEFAULT_HERO, ...Object.fromEntries(Object.entries(hero || {}).filter(([, v]) => v)) }
   return (
     <section className="relative">
@@ -94,6 +96,7 @@ export default function HomeHero({ hero }) {
         <div className="relative h-full max-w-[1360px] mx-auto px-4 md:px-6 lg:px-10 flex items-center">
           <Link to="/notifications" aria-label="Notifications" className="md:hidden absolute top-5 right-5 w-11 h-11 rounded-full bg-white/90 flex items-center justify-center shadow" style={{ color: C.ink }}>
             <Bell className="w-5 h-5" />
+            {unread > 0 && <span className="absolute top-2 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white" />}
           </Link>
 
           <div className="max-w-[560px] pb-6 md:pb-16">

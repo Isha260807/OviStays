@@ -7,6 +7,7 @@ const supportTicketSchema = new mongoose.Schema(
   {
     subject: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: '' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true }, // set for tickets raised from the guest app
     raisedBy: { type: String, required: true, trim: true },
     raisedByType: { type: String, enum: ['User', 'Hotel'], default: 'User' },
     priority: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Medium' },
