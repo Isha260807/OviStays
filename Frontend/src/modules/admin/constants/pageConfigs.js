@@ -6,14 +6,14 @@ const t = (key, label, type) => ({ key, label, type })
 const ID = t("refId", "ID")
 const STATUS = t("status", "Status", "status")
 
-const BOOKING_STATUSES = ["Pending", "Confirmed", "Checked In", "Checked Out", "Cancelled", "Refunded"]
+const BOOKING_STATUSES = ["Pending", "Requested", "Awaiting Payment", "Confirmed", "Checked In", "Checked Out", "Cancelled", "Rejected", "Expired", "Payment Failed", "No Show", "Refunded"]
 const HOTEL_STATUSES = ["Active", "Pending", "Suspended"]
 const ACTIVE = ["Active", "Inactive"]
 
 // ---------- Bookings (one page per status) ----------
 const bookingColumns = [
-  ID, t("guestName", "Guest"), t("hotelName", "Hotel"), t("city", "City"),
-  t("checkIn", "Check-in"), t("checkOut", "Check-out"), t("amount", "Amount", "money"), STATUS,
+  ID, t("guestName", "Guest"), t("hotelName", "Villa"), t("mode", "Type"),
+  t("checkIn", "Start", "datetime"), t("checkOut", "End", "datetime"), t("amount", "Amount", "money"), STATUS, t("paymentStatus", "Payment", "status"),
 ]
 
 const bookingPage = (title, fixedStatus) => ({
@@ -23,7 +23,8 @@ const bookingPage = (title, fixedStatus) => ({
   columns: bookingColumns,
   fixedStatus,
   statusOptions: BOOKING_STATUSES,
-  statusEditable: true,
+  statusEditable: false,
+  rowActions: [{ label: "Cancel", modal: "cancel", when: (r) => ["Requested", "Awaiting Payment", "Confirmed", "Checked In"].includes(r.status) }],
 })
 
 const hotelColumns = [ID, t("coverImage", "Photo", "image"), t("name", "Name"), t("city", "City"), t("owner", "Owner"), t("rooms", "Rooms"), t("rating", "Rating", "stars"), STATUS]
@@ -31,11 +32,14 @@ const hotelColumns = [ID, t("coverImage", "Photo", "image"), t("name", "Name"), 
 // Keys are the URL paths under /admin
 export const listConfigs = {
   "bookings/all": bookingPage("All Bookings"),
-  "bookings/pending": bookingPage("Pending Bookings", "Pending"),
+  "bookings/pending": bookingPage("Pending Requests", "Requested"),
+  "bookings/awaiting-payment": bookingPage("Awaiting Payment", "Awaiting Payment"),
   "bookings/confirmed": bookingPage("Confirmed Bookings", "Confirmed"),
   "bookings/checked-in": bookingPage("Checked In", "Checked In"),
   "bookings/checked-out": bookingPage("Checked Out", "Checked Out"),
   "bookings/cancelled": bookingPage("Cancelled Bookings", "Cancelled"),
+  "bookings/rejected": bookingPage("Rejected Requests", "Rejected"),
+  "bookings/no-show": bookingPage("No Shows", "No Show"),
   "bookings/refunded": bookingPage("Refunded Bookings", "Refunded"),
 
   "hotels/all": {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, Clock, LifeBuoy, Mail, Phone } from 'lucide-react'
+import { Clock, LifeBuoy, Mail, Phone } from 'lucide-react'
 import api from '@/services/api/axios.js'
 import { C } from '../../components/home/homeUi.jsx'
 import { PageShell } from '../../components/common/PageParts.jsx'
@@ -13,25 +13,14 @@ const STATUS_STYLE = {
   Closed: 'bg-gray-100 text-gray-600',
 }
 
-function Faq({ q, a }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="border-t first:border-t-0" style={cardBorder}>
-      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer">
-        <span className="text-sm font-semibold">{q}</span>
-        <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: C.muted }} />
-      </button>
-      {open && <p className="px-4 pb-4 text-sm leading-relaxed" style={{ color: C.muted }}>{a}</p>}
-    </div>
-  )
-}
-
 export default function Support() {
   const [info, setInfo] = useState(null)
   const [tickets, setTickets] = useState([])
   const [form, setForm] = useState({ subject: '', description: '' })
+  const [showTicketForm, setShowTicketForm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
+  const openTicketForm = () => setShowTicketForm(true)
 
   useEffect(() => {
     api.get('/user/support').then((res) => setInfo(res.data.data)).catch(() => {})
@@ -80,15 +69,12 @@ export default function Support() {
         </section>
       )}
 
-      {info?.faqs?.length > 0 && (
+      <button type='button' onClick={openTicketForm} className={primaryBtn + ' mt-8 w-full inline-flex items-center justify-center gap-2'} style={{ background: C.primary }}>
+        <LifeBuoy className='w-4 h-4' /> Raise a support ticket
+      </button>
+      {showTicketForm && (
         <section className="mt-8">
-          <h2 className="font-serif-display text-xl font-bold mb-3">Frequently asked questions</h2>
-          <div className={`${card} overflow-hidden`} style={cardBorder}>{info.faqs.map((f) => <Faq key={f.q} {...f} />)}</div>
-        </section>
-      )}
-
-      <section className="mt-8">
-        <h2 className="font-serif-display text-xl font-bold mb-3">Still need help?</h2>
+          <h2 className='font-serif-display text-xl font-bold mb-3'>Support ticket</h2>
         <form onSubmit={submit} className={`${card} p-5 space-y-4`} style={cardBorder}>
           <Field label="Subject">
             <input className={inputCls} style={cardBorder} value={form.subject} onChange={set('subject')} maxLength={100} placeholder="What is this about?" required />
@@ -99,12 +85,17 @@ export default function Support() {
           <Notice message={message} />
           <button type="submit" disabled={busy} className={primaryBtn} style={{ background: C.primary }}>{busy ? 'Sending...' : 'Send request'}</button>
         </form>
-      </section>
+        </section>
+      )}
 
-      {tickets.length > 0 && (
-        <section className="mt-8">
-          <h2 className="font-serif-display text-xl font-bold mb-3">Your requests</h2>
-          <ul className="space-y-3">
+      <section className="mt-8">
+        <h2 className="font-serif-display text-xl font-bold mb-3">Support ticket history</h2>
+          {tickets.length === 0 ? (
+            <div className={card + ' p-4'} style={cardBorder}>
+              <p className='text-sm' style={{ color: C.muted }}>No support tickets yet.</p>
+            </div>
+          ) : (
+          <ul className='space-y-3'>
             {tickets.map((t) => (
               <li key={t.id} className={`${card} p-4`} style={cardBorder}>
                 <div className="flex items-start justify-between gap-3">
@@ -115,8 +106,8 @@ export default function Support() {
               </li>
             ))}
           </ul>
-        </section>
-      )}
+          )}
+      </section>
 
       {!info && <p className="mt-10 text-center text-sm" style={{ color: C.muted }}><LifeBuoy className="inline w-4 h-4 mr-1" />Loading help...</p>}
     </PageShell>

@@ -1,16 +1,16 @@
 import mongoose from 'mongoose'
 import Hotel from '../../../models/Hotel.model.js'
 import Amenity from '../../../models/Amenity.model.js'
-import Booking from '../../../models/Booking.model.js'
+import AvailabilityBlock from '../../../models/AvailabilityBlock.model.js'
 import Coupon from '../../../models/Coupon.model.js'
 import Banner from '../../../models/Banner.model.js'
 import { villaCard } from './home.controller.js'
+import { zonedToUtc } from '../../../utils/time.js'
 
 // Public search and discovery: villa listing with filters, filter options, suggestions, destinations, offers.
 
 const PAGE_SIZE = 12
 const MAX_PAGE_SIZE = 24
-const BLOCKING_STATUSES = ['Pending', 'Confirmed', 'Checked In'] // a villa with one of these overlapping the dates is taken
 
 const escapeRx = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const num = (v) => {
@@ -78,7 +78,11 @@ export async function searchVillas(req, res) {
   const checkIn = date(qs.checkIn)
   const checkOut = date(qs.checkOut)
   if (checkIn && checkOut && checkOut > checkIn) {
-    const taken = await Booking.distinct('hotel', { status: { $in: BLOCKING_STATUSES }, checkIn: { $lt: checkOut }, checkOut: { $gt: checkIn } })
+    // A villa is taken when anything (booking, hold or owner block) overlaps the stay, from check-in time to check-out time
+    const now = new Date()
+    const from = zonedToUtc(String(qs.checkIn).slice(0, 10), '12:00')
+    const to = zonedToUtc(String(qs.checkOut).slice(0, 10), '11:00')
+    const taken = await AvailabilityBlock.distinct('villa', { released: { $ne: true }, $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }], startAt: { $lt: to }, blockedUntil: { $gt: from } })
     if (taken.length) and.push({ _id: { $nin: taken } })
   }
 

@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import PageHeader from "../components/ui/PageHeader.jsx"
 import StatusBadge from "../components/ui/StatusBadge.jsx"
 import Modal from "../components/ui/Modal.jsx"
+import AdminCancelModal from "../components/AdminCancelModal.jsx"
 import { FormGrid, cleanValues, buttonPrimary, buttonOutline } from "../components/ui/FormFields.jsx"
 import { adminAPI } from "../services/adminAPI.js"
 import { errorMessage } from "@/services/api/axios.js"
@@ -22,6 +23,7 @@ function renderCell(col, row) {
   if (col.type === "image") {
     return <img src={assetUrl(v)} alt="" loading="lazy" className="h-10 w-14 rounded object-cover border border-neutral-200" />
   }
+  if (col.type === "datetime") return new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
   if (col.type === "money") return `₹${Number(v).toLocaleString("en-IN")}`
   if (col.type === "stars") {
     const n = Math.round(Number(v))
@@ -49,6 +51,7 @@ export default function ListPage({ config }) {
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
   const [viewing, setViewing] = useState(null)
+  const [cancelling, setCancelling] = useState(null)
 
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search.trim()); setPage(1) }, 300)
@@ -179,7 +182,9 @@ export default function ListPage({ config }) {
                   {columns.map((c) => <td key={c.key} className="px-4 py-3 whitespace-nowrap text-neutral-800 max-w-[260px] truncate">{renderCell(c, row)}</td>)}
                   <td className="px-4 py-3">
                     <div className="flex justify-end items-center gap-1">
-                      {rowActions?.map((a) => a.to ? (
+                      {rowActions?.filter((a) => !a.when || a.when(row)).map((a) => a.modal === "cancel" ? (
+                        <button key={a.label} onClick={() => setCancelling(row)} className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100">{a.label}</button>
+                      ) : a.to ? (
                         <Link key={a.label} to={a.to(row)} className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-800 hover:bg-neutral-200">{a.label}</Link>
                       ) : (
                         <button key={a.label} onClick={() => patch(row, a.patch)}
@@ -205,6 +210,8 @@ export default function ListPage({ config }) {
           </div>
         </div>
       </div>
+
+      {cancelling && <AdminCancelModal booking={cancelling} onClose={() => setCancelling(null)} onDone={() => { setCancelling(null); load() }} />}
 
       <Modal open={adding} title={addLabel} onClose={() => setAdding(false)}>
         <form onSubmit={handleAdd} className="space-y-5">

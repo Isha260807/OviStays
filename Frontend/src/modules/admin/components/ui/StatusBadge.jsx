@@ -14,7 +14,8 @@ const statusTone = {
   approved: "green", rejected: "red", paid: "green", failed: "red", open: "amber",
   resolved: "green", "in progress": "blue", closed: "gray", unread: "amber", read: "gray",
   published: "green", draft: "gray", expired: "red", processed: "green", sent: "green",
-  scheduled: "blue",
+  scheduled: "blue", "pending approval": "amber", submitted: "amber", verified: "green", "not submitted": "gray",
+  requested: "amber", "awaiting payment": "amber", "no show": "gray", "payment failed": "red", "refund pending": "amber", "partially refunded": "blue", unpaid: "gray",
 }
 
 export default function StatusBadge({ value }) {

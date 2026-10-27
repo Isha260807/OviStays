@@ -20,6 +20,9 @@ import DeveloperSettings from "./pages/developer/DeveloperSettings.jsx"
 import { listConfigs, formConfigs } from "./constants/pageConfigs.js"
 import HomeDesign from "./pages/HomeDesign.jsx"
 import HotelDetailsEdit from "./pages/HotelDetailsEdit.jsx"
+import Owners from "./pages/marketplace/Owners.jsx"
+import VillaApprovals from "./pages/marketplace/VillaApprovals.jsx"
+import BookingRules from "./pages/marketplace/BookingRules.jsx"
 
 // Terms and privacy have one version per audience
 const ROLES = [
@@ -42,6 +45,9 @@ export default function AdminRoutes() {
           <Route path="settings" element={<BusinessSetup />} />
           <Route path="home-management/home-page" element={<HomeDesign />} />
           <Route path="hotels/:id/details" element={<HotelDetailsEdit />} />
+          <Route path="hotels/approvals" element={<VillaApprovals />} />
+          <Route path="owners" element={<Owners />} />
+          <Route path="booking-rules" element={<BookingRules />} />
           <Route path="reports/daily-sales" element={<DailySales />} />
           {Object.entries(reportConfigs).map(([path, config]) => (
             <Route key={path} path={`reports/${path}`} element={<ReportPage key={path} config={config} />} />

@@ -31,8 +31,8 @@ const AUTH_CALL = /\/auth\/(login|send-otp|verify-otp|register|refresh|logout)/
 let refreshing = null
 function refreshAccessToken() {
   refreshing ||= (async () => {
-    const { refreshToken } = useAuthStore.getState()
-    const res = await axios.post(`${api.defaults.baseURL}/user/auth/refresh`, { refreshToken })
+    const { refreshToken, role } = useAuthStore.getState()
+    const res = await axios.post(`${api.defaults.baseURL}/${role === 'hotel' ? 'hotel' : 'user'}/auth/refresh`, { refreshToken })
     const { token, refreshToken: next } = res.data.data
     useAuthStore.setState({ token, refreshToken: next })
     return token
@@ -49,7 +49,7 @@ api.interceptors.response.use(
     if (response?.status !== 401 || AUTH_CALL.test(config?.url || '')) return Promise.reject(error)
 
     const { role, refreshToken } = useAuthStore.getState()
-    if (role === 'user' && refreshToken && !config._retried) {
+    if ((role === 'user' || role === 'hotel') && refreshToken && !config._retried) {
       try {
         const token = await refreshAccessToken()
         // A copy, because merged duplicate GETs share this config and each one must get its own retry

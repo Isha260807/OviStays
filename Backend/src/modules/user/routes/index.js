@@ -11,6 +11,7 @@ import * as villa from '../controllers/villa.controller.js'
 import * as search from '../controllers/search.controller.js'
 import * as profile from '../controllers/profile.controller.js'
 import * as activity from '../controllers/activity.controller.js'
+import * as booking from '../controllers/booking.controller.js'
 
 const router = Router()
 
@@ -20,6 +21,8 @@ const phoneKey = (req) => `${req.path}:${normalizePhone(req.body?.phone) || req.
 const authIpLimit = rateLimit({ windowMs: 15 * MINUTE, max: 60, message: 'Too many attempts. Please try again in a few minutes.' })
 const otpSendLimit = rateLimit({ windowMs: 10 * MINUTE, max: 8, key: phoneKey, message: 'Too many OTP requests for this number. Please try again in a few minutes.' })
 const otpVerifyLimit = rateLimit({ windowMs: 15 * MINUTE, max: 15, key: phoneKey, message: 'Too many attempts. Please try again in a few minutes.' })
+const quoteLimit = rateLimit({ windowMs: MINUTE, max: 60 })
+const bookingLimit = rateLimit({ windowMs: 10 * MINUTE, max: 30, key: (req) => 'booking:' + (req.auth?.id || req.ip), message: 'Too many booking attempts. Please try again in a few minutes.' })
 const emailOtpLimit = rateLimit({ windowMs: 10 * MINUTE, max: 6, key: (req) => `email:${req.ip}`, message: 'Too many requests. Please try again in a few minutes.' })
 
 // Public routes
@@ -34,6 +37,9 @@ router.get('/home', home.getHome)
 router.get('/villas', search.searchVillas)
 router.get('/villas/filters', search.villaFilters)
 router.get('/villas/:id', villa.getVilla)
+router.get('/villas/:id/availability', booking.villaAvailability)
+router.get('/villas/:id/slots', booking.villaSlots)
+router.post('/bookings/quote', quoteLimit, booking.quote)
 router.get('/search/suggestions', search.suggestions)
 router.get('/destinations', search.destinations)
 router.get('/offers', search.offers)
@@ -74,7 +80,13 @@ router.post('/notifications/:id/read', ...guest, activity.markNotificationRead)
 router.get('/support/tickets', ...guest, activity.listTickets)
 router.post('/support/tickets', ...guest, activity.createTicket)
 
-router.get('/bookings', ...guest, activity.listBookings)
+router.get('/bookings', ...guest, booking.list)
+router.post('/bookings', ...guest, bookingLimit, booking.create)
+router.get('/bookings/:id', ...guest, booking.getOne)
+router.post('/bookings/:id/cancel', ...guest, booking.cancel)
+router.post('/bookings/:id/pay', ...guest, bookingLimit, booking.pay)
+router.post('/bookings/:id/payment/verify', ...guest, bookingLimit, booking.verifyPayment)
+router.post('/bookings/:id/payment/mock', ...guest, bookingLimit, booking.mockPayment)
 router.post('/bookings/:bookingId/review', ...guest, activity.createReview)
 router.get('/reviews', ...guest, activity.listMyReviews)
 router.delete('/reviews/:id', ...guest, activity.deleteMyReview)

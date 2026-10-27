@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, Briefcase, ChevronRight, FileText, Heart, LifeBuoy, Lock, LogOut, Phone, Settings, ShieldCheck, Star, User, Users } from 'lucide-react'
+import { Briefcase, ChevronRight, Heart, LifeBuoy, LogOut, Phone, Settings, ShieldCheck, Star, User } from 'lucide-react'
 import { assetUrl } from '@/services/api/config.js'
 import { useAuthStore } from '@/core/auth/auth.store.js'
 import { logoutUser } from '@/core/auth/logout.js'
@@ -15,10 +15,6 @@ const MENU = [
   { to: '/bookings', icon: Briefcase, title: 'My Bookings', subtitle: 'Upcoming, past and cancelled stays' },
   { to: '/wishlist', icon: Heart, title: 'My Wishlist', subtitle: 'Saved favourite villas' },
   { to: '/profile/reviews', icon: Star, title: 'My Reviews', subtitle: 'Ratings you gave after your stays' },
-  { to: '/profile/guests', icon: Users, title: 'Saved Guest Details', subtitle: 'Traveller names and contact details' },
-  { to: '/profile/billing', icon: FileText, title: 'Billing & ID', subtitle: 'GST details and ID proof for check-in' },
-  { to: '/profile/notifications', icon: Bell, title: 'Notification Settings', subtitle: 'Choose what we send and how' },
-  { to: '/profile/security', icon: Lock, title: 'Login & Security', subtitle: 'Verify email and manage your devices' },
   { to: '/support', icon: LifeBuoy, title: 'Help & Support', subtitle: 'FAQs and talk to our team' },
   { to: '/profile/settings', icon: Settings, title: 'Settings & Policies', subtitle: 'Terms, privacy and your account' },
 ]

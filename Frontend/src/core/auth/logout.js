@@ -9,7 +9,7 @@ export async function logoutUser() {
   clearAuth()
   useWishlist.getState().clear()
   useUnread.getState().clear()
-  if (role === 'user' && refreshToken) {
-    await api.post('/user/auth/logout', { refreshToken }).catch(() => {})
+  if ((role === 'user' || role === 'hotel') && refreshToken) {
+    await api.post(`/${role}/auth/logout`, { refreshToken }).catch(() => {})
   }
 }

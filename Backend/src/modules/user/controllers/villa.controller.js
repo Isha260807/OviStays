@@ -3,6 +3,9 @@ import Hotel from '../../../models/Hotel.model.js'
 import Amenity from '../../../models/Amenity.model.js'
 import Review from '../../../models/Review.model.js'
 import { notFound } from '../../../utils/httpError.js'
+import Settings from '../../../models/Settings.model.js'
+import { bookingConfig } from './booking.controller.js'
+import { refundPolicyText } from '../services/refund.policy.js'
 
 // Public data for the villa details page. Only Active villas are visible.
 
@@ -46,7 +49,8 @@ export async function getVilla(req, res) {
   const h = await Hotel.findOne({ _id: id, status: 'Active' }).lean()
   if (!h) throw notFound('Villa not found')
 
-  const [amenities, reviews] = await Promise.all([
+  const [settings, amenities, reviews] = await Promise.all([
+    Settings.get(),
     h.amenities?.length ? Amenity.find({ _id: { $in: h.amenities }, status: 'Active' }).lean() : [],
     reviewBlock(h._id),
   ])
@@ -80,10 +84,12 @@ export async function getVilla(req, res) {
       policies: {
         checkIn: h.checkInTime || '',
         checkOut: h.checkOutTime || '',
-        cancellation: h.cancellationPolicy || '',
+        cancellation: h.cancellationPolicy || refundPolicyText(settings.refundTiers),
         payment: h.paymentInfo || '',
       },
       mapUrl: h.mapUrl || '',
+      houseRules: h.houseRules || [],
+      booking: bookingConfig(h),
       reviews,
     },
   })

@@ -45,6 +45,21 @@ const settingsSchema = new mongoose.Schema(
     gstRate: { type: Number, default: 12, min: 0, max: 100 },
     cancelHours: { type: Number, default: 24, min: 0 },
 
+    // Booking rules (Admin > System Settings > Booking & Refund Rules)
+    stayGstRate: { type: Number, default: 12, min: 0, max: 100 }, // GST charged to the guest on the stay
+    instantHoldMinutes: { type: Number, default: 15, min: 5, max: 120 }, // how long an instant booking waits for payment
+    ownerResponseHours: { type: Number, default: 12, min: 1, max: 72 }, // how long an owner has to accept or reject a request
+    payWindowMinutes: { type: Number, default: 120, min: 10, max: 1440 }, // time the guest gets to pay after the owner accepts
+    checkInOpensHours: { type: Number, default: 3, min: 0, max: 48 }, // the check-in code works from this long before the start
+    noShowGraceHours: { type: Number, default: 12, min: 0, max: 72 }, // after the end, an unused booking becomes a no-show
+    autoCheckoutGraceHours: { type: Number, default: 2, min: 0, max: 48 },
+    // Cancelling at least `hoursBeforeStart` hours before the start refunds `refundPercent` of what was paid.
+    // The tier with the largest matching hoursBeforeStart wins; cancelling later than every tier refunds nothing.
+    refundTiers: {
+      type: [{ hoursBeforeStart: { type: Number, required: true, min: 0 }, refundPercent: { type: Number, required: true, min: 0, max: 100 }, _id: false }],
+      default: () => [{ hoursBeforeStart: 72, refundPercent: 100 }, { hoursBeforeStart: 24, refundPercent: 50 }],
+    },
+
     // Feature toggles (Admin > System Settings > Toggle Management)
     onlinePaymentOnly: { type: Boolean, default: false }, // turns pay-at-hotel off everywhere
     maxPayAtHotelAmount: { type: Number, default: 0, min: 0 }, // pay-at-hotel is refused above this amount; 0 = no limit

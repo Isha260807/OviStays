@@ -12,7 +12,8 @@ const app = express()
 app.use(helmet())
 app.use(cors({ origin: env.corsOrigin, credentials: true }))
 app.use(compression())
-app.use(express.json({ limit: '2mb' }))
+// The payment webhook is signed over the exact bytes received, so those are kept next to the parsed body
+app.use(express.json({ limit: '2mb', verify: (req, res, buf) => { if (req.originalUrl.startsWith('/api/payments/')) req.rawBody = buf } }))
 app.use(express.urlencoded({ extended: true }))
 if (env.nodeEnv !== 'test') app.use(morgan('dev'))
 
@@ -52,7 +53,7 @@ app.use((err, req, res, next) => {
   }
   const status = err.status || 500
   if (status >= 500) console.error(err)
-  res.status(status).json({ success: false, message: status >= 500 ? 'Server error' : err.message })
+  res.status(status).json({ success: false, message: status >= 500 ? 'Server error' : err.message, ...(status < 500 && err.extra ? { data: err.extra } : {}) })
 })
 
 export default app

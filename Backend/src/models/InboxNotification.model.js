@@ -5,7 +5,7 @@ const INBOX_DAYS = 90
 // A notification in one person's inbox (a guest or a hotel). The guest and hotel apps read these.
 const inboxSchema = new mongoose.Schema(
   {
-    ownerType: { type: String, enum: ['USER', 'HOTEL'], required: true },
+    ownerType: { type: String, enum: ['USER', 'HOTEL', 'OWNER'], required: true },
     ownerId: { type: mongoose.Schema.Types.ObjectId, required: true },
     title: { type: String, required: true, trim: true },
     message: { type: String, required: true, trim: true },

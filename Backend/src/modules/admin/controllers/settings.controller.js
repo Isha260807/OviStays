@@ -3,7 +3,7 @@ import { badRequest } from '../../../utils/httpError.js'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const TEXT_FIELDS = ['companyName', 'email', 'phoneCountryCode', 'phoneNumber', 'address', 'state', 'pincode', 'region', 'gstin', 'supportEmail', 'supportPhone', 'supportHours']
-const NUMBER_FIELDS = ['commissionRate', 'platformFee', 'gstRate', 'cancelHours']
+const NUMBER_FIELDS = ['commissionRate', 'platformFee', 'gstRate', 'cancelHours', 'stayGstRate', 'instantHoldMinutes', 'ownerResponseHours', 'payWindowMinutes', 'checkInOpensHours', 'noShowGraceHours', 'autoCheckoutGraceHours']
 const FILE_FIELDS = ['logo', 'userLogo', 'hotelLogo', 'favicon', 'termsAndConditionsPdf']
 
 // Shape sent to the admin form: everything, with files as { url, publicId }
@@ -33,6 +33,22 @@ function validate(body) {
   if (body.gstin !== undefined && text('gstin') && !/^[0-9A-Za-z]{15}$/.test(text('gstin'))) {
     throw badRequest('GSTIN must be 15 letters or digits')
   }
+}
+
+// Refund rules: a list of { hoursBeforeStart, refundPercent }, saved largest threshold first
+function cleanRefundTiers(value) {
+  if (!Array.isArray(value) || value.length > 10) throw badRequest('Refund rules must be a list of at most 10 rows')
+  const seen = new Set()
+  const tiers = value.map((t) => {
+    const hours = Number(t?.hoursBeforeStart)
+    const pct = Number(t?.refundPercent)
+    if (!Number.isInteger(hours) || hours < 0 || hours > 24 * 365) throw badRequest('Hours before the stay must be a whole number from 0 to 8760')
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw badRequest('Refund percentage must be between 0 and 100')
+    if (seen.has(hours)) throw badRequest('Two refund rules have the same hours')
+    seen.add(hours)
+    return { hoursBeforeStart: hours, refundPercent: pct }
+  })
+  return tiers.sort((a, b) => b.hoursBeforeStart - a.hoursBeforeStart)
 }
 
 const TOGGLE_FLAGS = ['onlinePaymentOnly', 'maintenanceMode', 'userRegistration', 'hotelRegistration']
@@ -86,6 +102,7 @@ export async function updateSettings(req, res) {
   for (const key of TEXT_FIELDS) if (body[key] !== undefined) s[key] = body[key]
   for (const key of NUMBER_FIELDS) if (body[key] !== undefined) s[key] = body[key]
   if (body.currency !== undefined) s.currency = body.currency
+  if (body.refundTiers !== undefined) s.refundTiers = cleanRefundTiers(body.refundTiers)
 
   // Files arrive as { url } (already uploaded through /api/uploads) or as a plain URL string
   for (const key of FILE_FIELDS) {

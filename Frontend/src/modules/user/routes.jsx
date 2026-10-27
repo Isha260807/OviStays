@@ -2,7 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Welcome, Login, Signup, VerifyOtp } from './pages/auth/index.js'
 import { Home } from './pages/Home/index.js'
 import VillaDetails from './pages/VillaDetails/VillaDetails.jsx'
-import BookingSoon from './pages/VillaDetails/BookingSoon.jsx'
+import BookingFlow from './pages/Booking/BookingFlow.jsx'
+import BookingDetail from './pages/Booking/BookingDetail.jsx'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/core/auth/auth.store.js'
 import { useWishlist } from '@/core/wishlist/wishlist.store.js'
@@ -49,6 +50,7 @@ export default function UserRoutes() {
       <Route path="notifications" element={<RequireUser><Notifications /></RequireUser>} />
       <Route path="support" element={<RequireUser><Support /></RequireUser>} />
       <Route path="bookings" element={<RequireUser><Bookings /></RequireUser>} />
+      <Route path="bookings/:id" element={<RequireUser><BookingDetail /></RequireUser>} />
       <Route path="villas/:id" element={<RequireUser><VillaDetails /></RequireUser>} />
       <Route path="wishlist" element={<RequireUser><Wishlist /></RequireUser>} />
       <Route path="profile" element={<RequireUser><Profile /></RequireUser>} />
@@ -60,7 +62,7 @@ export default function UserRoutes() {
       <Route path="profile/notifications" element={<RequireUser><Preferences /></RequireUser>} />
       <Route path="profile/security" element={<RequireUser><Security /></RequireUser>} />
       <Route path="pages/:key" element={<RequireUser><ContentPage /></RequireUser>} />
-      <Route path="villas/:id/book" element={<RequireUser><BookingSoon /></RequireUser>} />
+      <Route path="villas/:id/book" element={<RequireUser><BookingFlow /></RequireUser>} />
 
       {/* User Auth Routes */}
       <Route path="auth" element={<AuthRedirect />} />

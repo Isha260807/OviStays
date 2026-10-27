@@ -12,6 +12,7 @@ import * as pages from '../controllers/pages.controller.js'
 import * as home from '../controllers/home.controller.js'
 import * as hotelDetails from '../controllers/hotelDetails.controller.js'
 import * as dev from '../controllers/developer.controller.js'
+import * as market from '../controllers/marketplace.controller.js'
 import { requireSuperAdmin } from '../services/superAdmin.middleware.js'
 
 const router = Router()
@@ -53,6 +54,15 @@ router.get('/broadcasts/recipients', broadcast.recipients)
 router.get('/broadcasts', broadcast.list)
 router.post('/broadcasts', broadcast.create)
 router.delete('/broadcasts/:id', broadcast.remove)
+router.get('/owners', market.listOwners)
+router.get('/owners/:id', market.getOwner)
+router.post('/owners/:id/kyc', market.reviewKyc)
+router.patch('/owners/:id/status', market.setOwnerStatus)
+router.get('/hotels/:id/listing', market.listingInfo)
+router.post('/hotels/:id/listing', market.reviewListing)
+router.post('/bookings/:id/cancel', market.cancelAsAdmin)
+router.get('/bookings/:id/payments', market.bookingPayments)
+router.get('/audit-logs', market.auditLogs)
 router.get('/pages/:key', pages.getAdminPage)
 router.put('/pages/:key', pages.updateAdminPage)
 

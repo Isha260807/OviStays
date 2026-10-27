@@ -107,56 +107,6 @@ export async function createTicket(req, res) {
   res.status(201).json({ success: true, message: 'Your request has been sent. We will get back to you soon.', data: ticketView(ticket) })
 }
 
-// ---- bookings --------------------------------------------------------------------------------
-
-const ACTIVE_STATUSES = ['Pending', 'Confirmed', 'Checked In']
-const CANCELLED_STATUSES = ['Cancelled', 'Refunded']
-const startOfToday = () => new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z')
-
-function tabFilter(tab) {
-  const today = startOfToday()
-  if (tab === 'upcoming') return { status: { $in: ACTIVE_STATUSES }, checkOut: { $gte: today } }
-  if (tab === 'cancelled') return { status: { $in: CANCELLED_STATUSES } }
-  if (tab === 'past') return { $or: [{ status: 'Checked Out' }, { status: { $in: ACTIVE_STATUSES }, checkOut: { $lt: today } }] }
-  return {}
-}
-
-export async function listBookings(req, res) {
-  const filter = { user: req.auth.id, ...tabFilter(req.query.tab) }
-  const bookings = await Booking.find(filter).sort({ checkIn: req.query.tab === 'upcoming' ? 1 : -1 }).limit(100).lean()
-
-  const hotelIds = [...new Set(bookings.map((b) => String(b.hotel)))]
-  const [hotels, reviews] = await Promise.all([
-    Hotel.find({ _id: { $in: hotelIds } }).select('coverImage city').lean(),
-    Review.find({ booking: { $in: bookings.map((b) => b._id) } }).select('booking rating status').lean(),
-  ])
-  const hotelById = new Map(hotels.map((h) => [String(h._id), h]))
-  const reviewByBooking = new Map(reviews.map((r) => [String(r.booking), r]))
-
-  res.json({
-    success: true,
-    data: bookings.map((b) => {
-      const review = reviewByBooking.get(String(b._id))
-      return {
-        id: String(b._id),
-        code: b.refId,
-        villaId: String(b.hotel),
-        villaName: b.hotelName,
-        city: b.city || hotelById.get(String(b.hotel))?.city || '',
-        image: hotelById.get(String(b.hotel))?.coverImage || '',
-        checkIn: b.checkIn,
-        checkOut: b.checkOut,
-        nights: Math.max(Math.round((new Date(b.checkOut) - new Date(b.checkIn)) / DAY), 1),
-        guests: b.guests,
-        amount: b.amount,
-        status: b.status,
-        review: review ? { rating: review.rating, status: review.status } : null,
-        canReview: b.status === 'Checked Out' && !review,
-      }
-    }),
-  })
-}
-
 // ---- reviews ---------------------------------------------------------------------------------
 
 const reviewView = (r) => ({ id: String(r._id), villaId: String(r.hotel), villaName: r.hotelName, rating: r.rating, comment: r.comment || '', status: r.status, createdAt: r.createdAt })

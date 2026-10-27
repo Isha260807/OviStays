@@ -39,6 +39,17 @@ export const adminAPI = {
   getOperationalDataCounts: () => api.get('/admin/developer/operational-data').then(data),
   clearOperationalData: (body) => api.post('/admin/developer/operational-data/clear', body).then(data),
 
+  // Owners, villa approvals, bookings, audit
+  listOwners: (params) => api.get('/admin/owners', { params }).then(data),
+  getOwner: (id) => api.get(`/admin/owners/${id}`).then(data),
+  reviewKyc: (id, body) => api.post(`/admin/owners/${id}/kyc`, body).then(data),
+  setOwnerStatus: (id, body) => api.patch(`/admin/owners/${id}/status`, body).then(data),
+  listingInfo: (id) => api.get(`/admin/hotels/${id}/listing`).then(data),
+  reviewListing: (id, body) => api.post(`/admin/hotels/${id}/listing`, body).then(data),
+  cancelBooking: (id, body) => api.post(`/admin/bookings/${id}/cancel`, body).then(data),
+  bookingPayments: (id) => api.get(`/admin/bookings/${id}/payments`).then(data),
+  auditLogs: (params) => api.get('/admin/audit-logs', { params }).then(data),
+
   // Generic resource calls; `endpoint` is the URL segment, e.g. "hotels" or "room-types"
   list: (endpoint, params) => api.get(`/admin/${endpoint}`, { params }).then(data),
   create: (endpoint, body) => api.post(`/admin/${endpoint}`, body).then(data),

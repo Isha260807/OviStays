@@ -6,8 +6,8 @@ import { assetUrl } from '@/services/api/config.js'
 import { C } from '../../components/home/homeUi.jsx'
 import { EmptyState, ErrorNote, PageShell, Skeletons } from '../../components/common/PageParts.jsx'
 import { Notice, errorText, inputCls, primaryBtn } from '../../components/account/AccountUi.jsx'
-import { formatPrice } from '../../data/homeData.js'
-import { shortDate } from '../../utils/format.js'
+import { STATUS_PILL } from '../../components/booking/BookingParts.jsx'
+import { formatPaise, slotText } from '@/shared/utils/booking.js'
 
 const TABS = [
   { key: 'upcoming', label: 'Upcoming' },
@@ -15,14 +15,6 @@ const TABS = [
   { key: 'cancelled', label: 'Cancelled' },
 ]
 const border = { borderColor: '#E2EDF5' }
-const STATUS_STYLE = {
-  Pending: 'bg-amber-50 text-amber-700',
-  Confirmed: 'bg-emerald-50 text-emerald-700',
-  'Checked In': 'bg-sky-50 text-sky-700',
-  'Checked Out': 'bg-gray-100 text-gray-600',
-  Cancelled: 'bg-red-50 text-red-600',
-  Refunded: 'bg-purple-50 text-purple-700',
-}
 const EMPTY = {
   upcoming: { title: 'No upcoming trips', text: 'When you book a villa it will show up here.' },
   past: { title: 'No past stays yet', text: 'Your finished stays will be listed here.' },
@@ -86,25 +78,27 @@ function BookingCard({ b, onReview }) {
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-start justify-between gap-2">
           <Link to={`/villas/${b.villaId}`} className="font-serif-display text-lg font-semibold leading-tight">{b.villaName}</Link>
-          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[b.status] || STATUS_STYLE['Checked Out']}`}>{b.status}</span>
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_PILL[b.status] || STATUS_PILL['Checked Out']}`}>{b.status}</span>
         </div>
         {b.city && <p className="flex items-center gap-1 text-xs mt-0.5" style={{ color: C.muted }}><MapPin className="w-3.5 h-3.5" />{b.city}</p>}
         <p className="flex items-center gap-1.5 text-xs mt-2" style={{ color: C.muted }}>
-          <CalendarDays className="w-3.5 h-3.5" /> {shortDate(b.checkIn)} → {shortDate(b.checkOut)} · {b.nights} {b.nights === 1 ? 'night' : 'nights'}
+          <CalendarDays className="w-3.5 h-3.5" /> {slotText(b)}
         </p>
         <p className="flex items-center gap-1.5 text-xs mt-1" style={{ color: C.muted }}><Users className="w-3.5 h-3.5" /> {b.guests} {b.guests === 1 ? 'guest' : 'guests'}</p>
         <div className="mt-auto pt-2 flex items-end justify-between gap-2">
           <div>
-            <p className="text-base font-bold" style={{ color: C.primaryDark }}>{formatPrice(b.amount)}</p>
+            <p className="text-base font-bold" style={{ color: C.primaryDark }}>{formatPaise(b.totalPaise)}</p>
             <p className="text-[10px]" style={{ color: C.muted }}>Booking {b.code}</p>
           </div>
-          {b.canReview ? (
+          {b.canPay ? (
+            <Link to={`/bookings/${b.id}`} className="rounded-full px-4 py-1.5 text-xs font-semibold text-white" style={{ background: C.primaryDark }}>Pay now</Link>
+          ) : b.canReview ? (
             <button type="button" onClick={() => onReview(b)} className="rounded-full px-4 py-1.5 text-xs font-semibold text-white cursor-pointer" style={{ background: C.primary }}>Rate stay</button>
           ) : b.review ? (
             <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: C.muted }}>
               <Star className="w-3.5 h-3.5" fill="#F5A524" stroke="#F5A524" /> {b.review.rating}{b.review.status === 'Pending' ? ' · awaiting approval' : ''}
             </span>
-          ) : null}
+          ) : <Link to={`/bookings/${b.id}`} className="text-xs font-semibold underline" style={{ color: C.primaryDark }}>View details</Link>}
         </div>
       </div>
     </article>
