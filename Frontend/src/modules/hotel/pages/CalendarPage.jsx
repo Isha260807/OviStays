@@ -252,7 +252,7 @@ export default function CalendarPage() {
                   <li key={b.id} className="rounded-lg border border-slate-200 p-3 text-sm">
                     <div className="flex items-center justify-between gap-2"><span className="font-semibold">{blockLabel(b)}</span><Pill tone={b.type === 'owner_block' ? 'gray' : b.type === 'hold' ? 'amber' : 'blue'}>{b.type === 'owner_block' ? 'Blocked' : b.type === 'hold' ? 'On hold' : 'Booked'}</Pill></div>
                     <p className="mt-1 text-xs text-slate-500">{fullDate(localDateOf(b.startAt))} {timeOnly(b.startAt)} → {fullDate(localDateOf(b.endAt))} {timeOnly(b.endAt)}</p>
-                    {b.booking && <p className="mt-1 text-xs text-slate-600">{b.booking.guests} guests · {formatPaise(b.booking.totalPaise)} · <Link className="font-semibold text-sky-700" to={`/hotel/bookings?search=${b.booking.code}`}>{b.booking.code}</Link></p>}
+                    {b.booking && <p className="mt-1 text-xs text-slate-600">{b.booking.guests} guests · {formatPaise(b.booking.totalPaise)} · <Link className="font-semibold text-sky-700" to={`/hotel/bookings/${b.booking.id}`}>{b.booking.code}</Link></p>}
                     {b.type === 'owner_block' && <Btn size="sm" variant="ghost" className="mt-2 !text-red-600" onClick={() => unblock(b.id)}><Trash2 className="w-3.5 h-3.5" /> Unblock</Btn>}
                   </li>
                 ))}

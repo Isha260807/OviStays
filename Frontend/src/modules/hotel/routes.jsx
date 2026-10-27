@@ -6,6 +6,7 @@ import Villas from './pages/Villas.jsx'
 import VillaForm from './pages/VillaForm.jsx'
 import CalendarPage from './pages/CalendarPage.jsx'
 import Bookings from './pages/Bookings.jsx'
+import BookingPage from './pages/BookingPage.jsx'
 import CheckInOut from './pages/CheckInOut.jsx'
 import Earnings from './pages/Earnings.jsx'
 import Reviews from './pages/Reviews.jsx'
@@ -28,6 +29,7 @@ export default function HotelRoutes() {
         <Route path="villas/:id" element={<VillaForm />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="bookings" element={<Bookings />} />
+        <Route path="bookings/:id" element={<BookingPage />} />
         <Route path="checkin" element={<CheckInOut />} />
         <Route path="earnings" element={<Earnings />} />
         <Route path="reviews" element={<Reviews />} />

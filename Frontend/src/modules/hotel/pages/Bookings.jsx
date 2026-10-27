@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { useAsync } from '../components/useAsync.js'
-import BookingModal from '../components/BookingModal.jsx'
 import { Empty, ErrorBox, Input, PageTitle, Pager, Pill, Select, Spinner, Tabs } from '../components/ui.jsx'
 import { ownerAPI } from '../services/ownerAPI.js'
 import { MODE_LABEL, formatPaise, slotText, timeLeft } from '@/shared/utils/booking.js'
@@ -25,7 +24,6 @@ export default function Bookings() {
   const [search, setSearch] = useState(params.get('search') || '')
   const [q, setQ] = useState(params.get('search') || '')
   const [page, setPage] = useState(1)
-  const [open, setOpen] = useState(null)
 
   useEffect(() => { const t = setTimeout(() => { setQ(search.trim()); setPage(1) }, 300); return () => clearTimeout(t) }, [search])
 
@@ -59,19 +57,18 @@ export default function Bookings() {
           <ul className="divide-y divide-slate-100">
             {d.items.map((b) => (
               <li key={b.id}>
-                <button type="button" onClick={() => setOpen(b.id)} className="grid w-full gap-2 px-4 py-3.5 text-left hover:bg-slate-50 cursor-pointer sm:grid-cols-[1.2fr_1.6fr_auto_auto] sm:items-center">
+                <Link to={`/hotel/bookings/${b.id}`} className="grid w-full gap-2 px-4 py-3.5 text-left hover:bg-slate-50 sm:grid-cols-[1.2fr_1.6fr_auto_auto] sm:items-center">
                   <div className="min-w-0"><p className="truncate font-semibold text-slate-900">{b.guest.name}</p><p className="truncate text-xs text-slate-500">{b.code} · {b.villaName}</p></div>
                   <div className="min-w-0 text-sm text-slate-700"><p className="truncate">{slotText(b)}</p><p className="text-xs text-slate-500">{MODE_LABEL[b.mode]} · {b.guests} guests</p></div>
                   <div className="flex flex-wrap items-center gap-1.5"><Pill>{b.status}</Pill>{b.canRespond && <span className="text-xs font-semibold text-amber-700">{timeLeft(b.ownerResponseDueAt)}</span>}</div>
                   <div className="text-right"><p className="font-semibold">{formatPaise(b.payoutPaise)}</p><p className="text-[11px] text-slate-500">your payout</p></div>
-                </button>
+                </Link>
               </li>
             ))}
           </ul>
         </div>
       )}
       {d && <Pager page={d.page} pages={d.pages} onChange={setPage} />}
-      {open && <BookingModal id={open} onClose={() => setOpen(null)} onChanged={list.reload} />}
     </>
   )
 }

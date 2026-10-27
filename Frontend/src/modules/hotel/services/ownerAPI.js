@@ -26,6 +26,7 @@ export const ownerAPI = {
   readAll: () => api.post('/hotel/notifications/read-all').then(data),
   readOne: (id) => api.post(`/hotel/notifications/${id}/read`).then(data),
 
+  locations: () => api.get('/hotel/locations').then(data),
   amenities: () => api.get('/hotel/amenities').then(data),
   villas: () => api.get('/hotel/villas').then(data),
   villa: (id) => api.get(`/hotel/villas/${id}`).then(data),

@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Building2, CalendarDays, CalendarCheck, ClipboardList, KeyRound, LayoutDashboard, LogOut, Menu, Star, UserCircle, Wallet, X } from 'lucide-react'
+import { Bell, BellOff, Building2, Volume2, VolumeX, CalendarDays, CalendarCheck, ClipboardList, KeyRound, LayoutDashboard, LogOut, Menu, Star, UserCircle, Wallet, X } from 'lucide-react'
 import { useAuthStore } from '@/core/auth/auth.store.js'
 import { logoutUser } from '@/core/auth/logout.js'
 import { cn } from '@/shared/utils/cn.js'
 import { ownerAPI } from '../services/ownerAPI.js'
 import { Pill } from './ui.jsx'
+import { useOwnerAlerts } from './useOwnerAlerts.js'
 
 const NAV = [
   { to: '/hotel', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -45,6 +46,10 @@ export default function OwnerLayout() {
   const signedIn = Boolean(token) && role === 'hotel'
 
   useEffect(() => setOpen(false), [location.pathname])
+
+  // New booking requests, payments and cancellations ring and pop up while the panel is open
+  const onCounts = useCallback(({ unread, pending }) => setCounts({ unread, pending }), [])
+  const { sound, setSound } = useOwnerAlerts({ enabled: signedIn && kyc !== null, verified: kyc === 'Verified', navigate, onCounts })
 
   // Badges refresh as the owner moves around
   useEffect(() => {
@@ -90,6 +95,7 @@ export default function OwnerLayout() {
       <div className="border-t border-slate-100 p-4">
         <p className="truncate text-sm font-semibold text-slate-800">{user?.name}</p>
         <p className="truncate text-xs text-slate-500">{user?.phone}</p>
+        <button type="button" onClick={() => setSound(!sound)} className="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-sky-700 cursor-pointer">{sound ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />} Alert sound: {sound ? 'On' : 'Off'}</button>
         <button type="button" onClick={signOut} className="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-red-600 cursor-pointer"><LogOut className="w-4 h-4" /> Sign out</button>
       </div>
     </nav>
@@ -108,7 +114,8 @@ export default function OwnerLayout() {
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
           <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="cursor-pointer"><Menu className="w-6 h-6" /></button>
           <span className="font-bold text-sky-700">OviStays Host</span>
-          <Link to="/hotel/notifications" className="ml-auto relative" aria-label="Notifications"><Bell className="w-5 h-5" />{counts.unread > 0 && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-500" />}</Link>
+          <button type="button" onClick={() => setSound(!sound)} aria-label={sound ? 'Turn alert sound off' : 'Turn alert sound on'} className="ml-auto cursor-pointer text-slate-600">{sound ? <Volume2 className="w-5 h-5 text-sky-700" /> : <VolumeX className="w-5 h-5 text-slate-400" />}</button>
+          <Link to="/hotel/notifications" className="relative" aria-label="Notifications"><Bell className="w-5 h-5" />{counts.unread > 0 && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-500" />}</Link>
         </header>
         <main className="mx-auto w-full max-w-6xl p-4 pb-24 lg:p-8"><Outlet /></main>
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>

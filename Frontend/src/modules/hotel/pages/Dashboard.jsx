@@ -17,7 +17,7 @@ function PeopleList({ title, items, empty }) {
                 <p className="truncate font-medium text-slate-900">{b.guest}</p>
                 <p className="truncate text-xs text-slate-500">{b.villa} · {MODE_LABEL[b.mode] || 'Stay'} · {b.guests} guests</p>
               </div>
-              <div className="text-right text-xs text-slate-500"><p>{dateTime(b.at)}</p><Link to="/hotel/checkin" className="font-semibold text-sky-700">Open</Link></div>
+              <div className="text-right text-xs text-slate-500"><p>{dateTime(b.at)}</p><Link to={`/hotel/bookings/${b.id}`} className="font-semibold text-sky-700">Open</Link></div>
             </li>
           ))}
         </ul>

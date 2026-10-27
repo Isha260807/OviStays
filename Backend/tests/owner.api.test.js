@@ -6,6 +6,7 @@ import app from '../src/app.js'
 import { signAccessToken } from '../src/core/auth/token.util.js'
 import { addDays } from '../src/utils/time.js'
 import Amenity from '../src/models/Amenity.model.js'
+import Location from '../src/models/Location.model.js'
 import { setGateway } from '../src/core/payments/gateway.js'
 
 let server
@@ -160,6 +161,14 @@ test('guest and anonymous tokens cannot use owner routes', async () => {
 
 test('villa drafts, validation and ownership', async () => {
   amenityId = String((await Amenity.create({ name: 'Pool', category: 'Wellness' }))._id)
+  await Location.create({ city: 'Goa', state: 'Goa' })
+  await Location.create({ city: 'Jaipur', state: 'Rajasthan', status: 'Inactive' })
+  const list = await call('GET', '/hotel/locations', { token: owner1.token })
+  assert.deepEqual(list.body.data, [{ city: 'Goa', state: 'Goa' }]) // only Active locations
+  const unknown = await call('POST', '/hotel/villas', { token: owner1.token, body: { name: 'Nowhere Villa', city: 'Atlantis' } })
+  assert.equal(unknown.status, 400)
+  assert.match(unknown.body.message, /Choose a city from the list/)
+  assert.equal((await call('POST', '/hotel/villas', { token: owner1.token, body: { name: 'Hidden City Villa', city: 'Jaipur' } })).status, 400) // admin switched it off
   const bad = await call('POST', '/hotel/villas', { token: owner1.token, body: { name: 'X', city: 'Goa' } })
   assert.equal(bad.status, 400)
   const created = await call('POST', '/hotel/villas', { token: owner1.token, body: { ...completeVilla({ amenities: [amenityId] }), ownerId: String(owner2.id) } })

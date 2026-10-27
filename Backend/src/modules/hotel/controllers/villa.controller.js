@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import Hotel from '../../../models/Hotel.model.js'
 import Booking, { LIVE_STATUSES } from '../../../models/Booking.model.js'
 import Amenity from '../../../models/Amenity.model.js'
+import Location from '../../../models/Location.model.js'
 import { audit } from '../../../models/AuditLog.model.js'
 import { HttpError, badRequest, notFound } from '../../../utils/httpError.js'
 import { cleanVilla, missingForSubmit } from '../validators/villa.validator.js'
@@ -90,9 +91,26 @@ export async function get(req, res) {
   res.json({ success: true, data: villaView(await ownVilla(req)) })
 }
 
+const escapeRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// The city must be one the admin added under Admin > Locations (and left Active). The state comes from that
+// location, so the two can never disagree. Returns the canonical { city, state }.
+async function resolveLocation(city) {
+  const loc = await Location.findOne({ city: new RegExp(`^${escapeRx(String(city).trim())}$`, 'i'), status: 'Active' }).lean()
+  if (!loc) throw badRequest('Choose a city from the list. Cities are added by the OviStays team.')
+  return { city: loc.city, state: loc.state }
+}
+
+// GET /hotel/locations   the cities an owner can choose from
+export async function locations(req, res) {
+  const items = await Location.find({ status: 'Active' }).sort({ city: 1 }).lean()
+  res.json({ success: true, data: items.map((l) => ({ city: l.city, state: l.state })) })
+}
+
 // POST /hotel/villas   (starts as a Draft; name and city are enough to begin)
 export async function create(req, res) {
   const set = cleanVilla(req.body)
+  if (set.city) Object.assign(set, await resolveLocation(set.city))
   if (!set.name) throw badRequest('Villa name is required')
   if (!set.city) throw badRequest('City is required')
   const villa = new Hotel({ ...set, ownerId: req.owner._id, owner: req.owner.name, listingStatus: 'Draft' })
@@ -107,6 +125,9 @@ export async function update(req, res) {
   const villa = await ownVilla(req)
   if (villa.listingStatus === 'Suspended') throw new HttpError(403, 'This villa is suspended. Please contact support.')
   const set = cleanVilla(req.body)
+  // A city is checked when it is new or changed; a villa that already had a city keeps it even if the admin later hides it
+  if (set.city && set.city !== villa.city) Object.assign(set, await resolveLocation(set.city))
+  else delete set.state
   if (!Object.keys(set).length) throw badRequest('Nothing to update')
 
   // Day-use packages keep their id so bookings made on them stay valid

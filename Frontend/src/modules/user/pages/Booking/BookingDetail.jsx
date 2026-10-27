@@ -105,8 +105,8 @@ export default function BookingDetail() {
           <div className="min-w-0">
             <p className="font-semibold">{ui.title}</p>
             <p className="text-sm">{b.status === 'Cancelled' ? cancelText : b.status === 'Rejected' && b.rejectReason ? `${ui.text} Reason: ${b.rejectReason}` : ui.text}</p>
-            {b.status === 'Requested' && b.ownerResponseDueAt && <div className="mt-1.5"><Countdown to={b.ownerResponseDueAt} label="Host replies in" /></div>}
-            {b.status === 'Awaiting Payment' && b.holdExpiresAt && <div className="mt-1.5"><Countdown to={b.holdExpiresAt} label="Hold ends in" /></div>}
+            {b.status === 'Requested' && b.ownerResponseDueAt && <div className="mt-1.5"><Countdown to={b.ownerResponseDueAt} label="Host reply due:" /></div>}
+            {b.status === 'Awaiting Payment' && b.holdExpiresAt && <div className="mt-1.5"><Countdown to={b.holdExpiresAt} label="Dates held:" /></div>}
           </div>
         </div>
 
