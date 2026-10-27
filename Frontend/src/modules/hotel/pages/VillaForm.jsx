@@ -106,7 +106,9 @@ export default function VillaForm() {
 
   const loaded = useAsync(async () => (isNew ? null : ownerAPI.villa(id)), [id])
   const amenities = useAsync(() => ownerAPI.amenities(), [])
-  const cities = useAsync(() => ownerAPI.locations(), [])
+  const states = useAsync(() => ownerAPI.locations(), [])
+  // cities other villas already use in the chosen state, offered as suggestions while typing
+  const cityHints = useAsync(() => (form.state ? ownerAPI.cities(form.state) : Promise.resolve([])), [form.state])
   const villa = loaded.data
 
   useEffect(() => {
@@ -193,15 +195,18 @@ export default function VillaForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full address" className="sm:col-span-2"><Input value={form.address} onChange={txt('address')} maxLength={250} /></Field>
             <Field label="Locality / area"><Input value={form.locality} onChange={txt('locality')} maxLength={80} /></Field>
-            <Field label="City" hint={cities.data?.length === 0 ? 'No cities are available yet. Please ask the OviStays team to add yours.' : 'Only cities added by OviStays can be chosen.'}>
-              <Select value={form.city} required onChange={(e) => { const c = (cities.data || []).find((x) => x.city === e.target.value); edit({ city: e.target.value, state: c ? c.state : form.state }) }}>
-                <option value="">Select city…</option>
-                {/* a villa saved before this list existed keeps its own city */}
-                {form.city && !(cities.data || []).some((x) => x.city === form.city) && <option value={form.city}>{form.city}</option>}
-                {(cities.data || []).map((c) => <option key={c.city} value={c.city}>{c.city}, {c.state}</option>)}
+            <Field label="State" hint={states.data?.length === 0 ? 'No states are available yet. Please ask the OviStays team to add yours.' : 'Only states added by OviStays can be chosen.'}>
+              <Select value={form.state} required onChange={(e) => edit({ state: e.target.value })}>
+                <option value="">Select state…</option>
+                {/* a villa saved before this list changed keeps its own state */}
+                {form.state && !(states.data || []).some((x) => x.state === form.state) && <option value={form.state}>{form.state}</option>}
+                {(states.data || []).map((s) => <option key={s.state} value={s.state}>{s.state}</option>)}
               </Select>
             </Field>
-            <Field label="State"><Input value={form.state} disabled /></Field>
+            <Field label="City" hint="The city or town of your villa, inside the state.">
+              <Input value={form.city} list="villa-cities" required maxLength={60} placeholder="e.g. Jaipur" onChange={txt('city')} />
+              <datalist id="villa-cities">{(cityHints.data || []).map((c) => <option key={c} value={c} />)}</datalist>
+            </Field>
             <Field label="Country"><Input value={form.country} onChange={txt('country')} maxLength={60} /></Field>
             <Field label="Pincode"><Input value={form.pincode} onChange={txt('pincode')} inputMode="numeric" maxLength={10} /></Field>
             <Field label="Google Maps link" hint="Paste the share link of your villa's pin (https)."><Input value={form.mapUrl} onChange={txt('mapUrl')} placeholder="https://maps.app.goo.gl/..." /></Field>

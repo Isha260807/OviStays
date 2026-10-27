@@ -1,5 +1,6 @@
 import HomePage from '../../../models/HomePage.model.js'
 import Location from '../../../models/Location.model.js'
+import { inActiveState } from '../../../utils/activeStates.js'
 import Hotel from '../../../models/Hotel.model.js'
 import Banner from '../../../models/Banner.model.js'
 import Coupon from '../../../models/Coupon.model.js'
@@ -22,7 +23,7 @@ export const villaCard = (h) => ({
 // Active hotels for a list of ids, kept in the order the admin chose
 async function hotelsByIds(idList) {
   if (!idList?.length) return []
-  const docs = await Hotel.find({ _id: { $in: idList }, status: 'Active' }).lean()
+  const docs = await Hotel.find({ _id: { $in: idList }, status: 'Active', ...(await inActiveState()) }).lean()
   const byId = new Map(docs.map((d) => [String(d._id), d]))
   return idList.map((i) => byId.get(String(i))).filter(Boolean).map(villaCard)
 }
@@ -74,7 +75,7 @@ async function resolveSection(s) {
       if (!tiles.length) return null
       const cities = tiles.map((t) => t.city)
       const prices = await Hotel.aggregate([
-        { $match: { status: 'Active', city: { $in: cities } } },
+        { $match: { status: 'Active', ...(await inActiveState()), city: { $in: cities } } },
         { $group: { _id: '$city', price: { $min: '$startingPrice' } } },
       ])
       const priceOf = Object.fromEntries(prices.map((p) => [p._id, p.price]))
@@ -105,18 +106,18 @@ async function resolveSection(s) {
 
     case 'categories': {
       // Round tiles are the locations the admin added, with the photo the admin uploaded; without one
-      // the best-rated active villa in the city lends its cover photo, and a city with neither is skipped
+      // the best-rated active villa in the state lends its cover photo, and a state with neither is skipped
       const [locations, rows] = await Promise.all([
         Location.find({ status: 'Active' }).sort({ createdAt: 1 }).lean(),
         Hotel.aggregate([
           { $match: { status: 'Active', coverImage: { $nin: ['', null] } } },
           { $sort: { rating: -1 } },
-          { $group: { _id: { $toLower: '$city' }, image: { $first: '$coverImage' } } },
+          { $group: { _id: { $toLower: '$state' }, image: { $first: '$coverImage' } } },
         ]),
       ])
       const imageOf = new Map(rows.map((r) => [r._id, r.image]))
       const list = locations
-        .map((l) => ({ label: l.city, image: l.image || imageOf.get(l.city.toLowerCase()), to: `/villas?city=${encodeURIComponent(l.city)}` }))
+        .map((l) => ({ label: l.state, image: l.image || imageOf.get(l.state.toLowerCase()), to: `/villas?state=${encodeURIComponent(l.state)}` }))
         .filter((l) => l.image)
       return list.length ? { ...base, categories: list } : null
     }

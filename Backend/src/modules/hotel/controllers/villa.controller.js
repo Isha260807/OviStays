@@ -95,25 +95,34 @@ export async function get(req, res) {
 
 const escapeRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-// The city must be one the admin added under Admin > Locations (and left Active). The state comes from that
-// location, so the two can never disagree. Returns the canonical { city, state }.
-async function resolveLocation(city) {
-  const loc = await Location.findOne({ city: new RegExp(`^${escapeRx(String(city).trim())}$`, 'i'), status: 'Active' }).lean()
-  if (!loc) throw badRequest('Choose a city from the list. Cities are added by the OviStays team.')
-  return { city: loc.city, state: loc.state }
+// The state must be one the admin added under Admin > Locations (and left Active). The owner writes the city
+// inside it. Returns the state as the admin spelled it.
+async function resolveState(state) {
+  const loc = await Location.findOne({ state: new RegExp(`^${escapeRx(String(state).trim())}$`, 'i'), status: 'Active' }).lean()
+  if (!loc) throw badRequest('Choose a state from the list. States are added by the OviStays team.')
+  return loc.state
 }
 
-// GET /hotel/locations   the cities an owner can choose from
+// GET /hotel/locations   the states an owner can choose from
 export async function locations(req, res) {
-  const items = await Location.find({ status: 'Active' }).sort({ city: 1 }).lean()
-  res.json({ success: true, data: items.map((l) => ({ city: l.city, state: l.state })) })
+  const items = await Location.find({ status: 'Active' }).sort({ state: 1 }).lean()
+  // each state once, even if the list still holds the old one-record-per-city entries
+  res.json({ success: true, data: [...new Set(items.map((l) => l.state))].map((state) => ({ state })) })
 }
 
-// POST /hotel/villas   (starts as a Draft; name and city are enough to begin)
+// GET /hotel/cities?state=   cities already used by villas in a state, so owners spell them the same way
+export async function cities(req, res) {
+  const state = String(req.query.state || '').trim()
+  const rows = state ? await Hotel.distinct('city', { state }) : []
+  res.json({ success: true, data: rows.filter(Boolean).sort() })
+}
+
+// POST /hotel/villas   (starts as a Draft; name, state and city are enough to begin)
 export async function create(req, res) {
   const set = cleanVilla(req.body)
-  if (set.city) Object.assign(set, await resolveLocation(set.city))
+  if (set.state) set.state = await resolveState(set.state)
   if (!set.name) throw badRequest('Villa name is required')
+  if (!set.state) throw badRequest('State is required')
   if (!set.city) throw badRequest('City is required')
   const villa = new Hotel({ ...set, ownerId: req.owner._id, owner: req.owner.name, listingStatus: 'Draft' })
   syncDerived(villa, req.owner)
@@ -127,8 +136,8 @@ export async function update(req, res) {
   const villa = await ownVilla(req)
   if (villa.listingStatus === 'Suspended') throw new HttpError(403, 'This villa is suspended. Please contact support.')
   const set = cleanVilla(req.body)
-  // A city is checked when it is new or changed; a villa that already had a city keeps it even if the admin later hides it
-  if (set.city && set.city !== villa.city) Object.assign(set, await resolveLocation(set.city))
+  // A state is checked when it is new or changed; a villa that already had a state keeps it even if the admin later hides it
+  if (set.state && set.state !== villa.state) set.state = await resolveState(set.state)
   else delete set.state
   if (!Object.keys(set).length) throw badRequest('Nothing to update')
 

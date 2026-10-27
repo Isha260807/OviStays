@@ -15,6 +15,7 @@ import User from '../../user/models/User.model.js'
 import Admin from '../models/Admin.model.js'
 import { badRequest } from '../../../utils/httpError.js'
 import { recalcHotelRating } from '../../../utils/hotelRating.js'
+import { activeStates, forgetActiveStates } from '../../../utils/activeStates.js'
 
 const ymd = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '')
 const strip = (d) => {
@@ -27,6 +28,11 @@ async function attachHotel(data) {
   const hotel = await Hotel.findById(data.hotel)
   if (!hotel) throw badRequest('Hotel not found')
   data.hotelName = hotel.name
+}
+
+// A hotel's state must be one the admin added under Locations (and left Active)
+async function assertKnownState(state) {
+  if (!state || !(await activeStates()).includes(state)) throw badRequest('Choose a state from the list. States are added under Locations.')
 }
 
 // { city -> count } for a list of docs, using one aggregate instead of a query per row
@@ -54,7 +60,8 @@ export const resources = {
     searchFields: ['refId', 'name', 'owner', 'city'],
     createFields: ['name', 'owner', 'coverImage', 'email', 'phone', 'description', 'address', 'city', 'state', 'pincode', 'rooms', 'startingPrice', 'checkInTime', 'checkOutTime'],
     updateFields: ['status', 'name', 'owner', 'coverImage', 'email', 'phone', 'description', 'address', 'city', 'state', 'pincode', 'rooms', 'startingPrice', 'checkInTime', 'checkOutTime'],
-    beforeCreate: (data) => { data.status = 'Active' }, // hotels added by an admin skip the approval queue
+    beforeCreate: async (data) => { await assertKnownState(data.state); data.status = 'Active' }, // hotels added by an admin skip the approval queue
+    beforeUpdate: async (doc, data) => { if (data.state && data.state !== doc.state) await assertKnownState(data.state) },
     optionLabel: (d) => `${d.name} (${d.city})`,
     toRow: strip,
   },
@@ -80,17 +87,20 @@ export const resources = {
 
   locations: {
     model: Location,
-    searchFields: ['refId', 'city', 'state'],
-    createFields: ['city', 'state', 'image'],
-    // The city name stays fixed: villas point to their city by name
-    updateFields: ['state', 'image', 'status'],
-    // Villas keep a copy of the state, so a corrected state reaches them too
-    afterChange: (doc) => Hotel.updateMany({ city: doc.city }, { state: doc.state }),
-    optionLabel: (d) => d.city,
-    optionValue: (d) => d.city,
+    searchFields: ['refId', 'state'],
+    createFields: ['state', 'image'],
+    // The state name stays fixed: villas point to their state by name
+    updateFields: ['image', 'status'],
+    afterChange: () => forgetActiveStates(),
+    beforeDelete: async (doc) => {
+      const n = await Hotel.countDocuments({ state: doc.state })
+      if (n) throw badRequest(`${n} villa${n > 1 ? 's are' : ' is'} in ${doc.state}. Set it to Inactive instead of deleting it.`)
+    },
+    optionLabel: (d) => d.state,
+    optionValue: (d) => d.state,
     decorate: async (docs) => {
-      const counts = await countBy(Hotel, 'city', docs.map((d) => d.city))
-      return docs.map((d) => ({ ...strip(d), hotels: counts[d.city] || 0 }))
+      const counts = await countBy(Hotel, 'state', docs.map((d) => d.state))
+      return docs.map((d) => ({ ...strip(d), hotels: counts[d.state] || 0 }))
     },
   },
 

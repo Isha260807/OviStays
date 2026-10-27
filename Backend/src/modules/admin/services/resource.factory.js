@@ -18,6 +18,7 @@ const pick = (obj = {}, keys = []) =>
  * cfg.toRow(doc)     shape of one row sent to the client
  * cfg.decorate(docs) async alternative to toRow for adding aggregated columns
  * cfg.optionLabel / cfg.optionValue   enable GET /options for select inputs
+ * cfg.beforeDelete(doc)   may throw to refuse a delete
  * cfg.actions        subset of: list, get, create, update, delete
  */
 export function createResourceRouter(cfg) {
@@ -113,6 +114,7 @@ export function createResourceRouter(cfg) {
   if (actions.has('delete')) {
     router.delete('/:id', async (req, res) => {
       const doc = await findOne(req.params.id)
+      if (cfg.beforeDelete) await cfg.beforeDelete(doc)
       await doc.deleteOne()
       if (cfg.afterChange) await cfg.afterChange(doc)
       res.json({ success: true })

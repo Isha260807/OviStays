@@ -5,6 +5,7 @@ import AvailabilityBlock from '../../../models/AvailabilityBlock.model.js'
 import Coupon from '../../../models/Coupon.model.js'
 import Banner from '../../../models/Banner.model.js'
 import { villaCard } from './home.controller.js'
+import { inActiveState } from '../../../utils/activeStates.js'
 import { zonedToUtc } from '../../../utils/time.js'
 
 // Public search and discovery: villa listing with filters, filter options, suggestions, destinations, offers.
@@ -43,7 +44,7 @@ const listItem = (h) => ({
 // GET /user/villas?q=&city=&type=&checkIn=&checkOut=&guests=&minPrice=&maxPrice=&rating=&bedrooms=&amenities=a,b&sort=&page=&limit=
 export async function searchVillas(req, res) {
   const qs = req.query
-  const and = [{ status: 'Active' }]
+  const and = [{ status: 'Active' }, await inActiveState()]
 
   // Every word has to match somewhere (name, place or type), so "goa pool" finds pool villas in Goa
   const words = String(qs.q || '').trim().split(/\s+/).filter(Boolean).slice(0, 5)
@@ -52,6 +53,8 @@ export async function searchVillas(req, res) {
     and.push({ $or: [{ name: rx }, { city: rx }, { state: rx }, { address: rx }, { propertyType: rx }] })
   }
 
+  const state = String(qs.state || '').trim()
+  if (state) and.push({ state: new RegExp(`^${escapeRx(state)}$`, 'i') })
   const city = String(qs.city || '').trim()
   if (city) and.push({ city: new RegExp(`^${escapeRx(city)}$`, 'i') })
 
@@ -104,9 +107,10 @@ export async function searchVillas(req, res) {
 
 // GET /user/villas/filters: what the filter sheet can offer, taken from the active villas
 export async function villaFilters(req, res) {
-  const active = { status: 'Active' }
-  const [cities, price, types, amenityIds] = await Promise.all([
-    Hotel.aggregate([{ $match: active }, { $group: { _id: '$city', count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }]),
+  const active = { status: 'Active', ...(await inActiveState()) }
+  const [states, cities, price, types, amenityIds] = await Promise.all([
+    Hotel.aggregate([{ $match: active }, { $group: { _id: '$state', count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }]),
+    Hotel.aggregate([{ $match: active }, { $group: { _id: { state: '$state', city: '$city' }, count: { $sum: 1 } } }, { $sort: { count: -1, '_id.city': 1 } }]),
     Hotel.aggregate([{ $match: { ...active, startingPrice: { $gt: 0 } } }, { $group: { _id: null, min: { $min: '$startingPrice' }, max: { $max: '$startingPrice' } } }]),
     Hotel.distinct('propertyType', active),
     Hotel.distinct('amenities', active),
@@ -116,7 +120,8 @@ export async function villaFilters(req, res) {
   res.json({
     success: true,
     data: {
-      cities: cities.map((c) => ({ city: c._id, count: c.count })),
+      states: states.map((x) => ({ state: x._id, count: x.count })),
+      cities: cities.map((c) => ({ city: c._id.city, state: c._id.state, count: c.count })),
       price: { min: price[0]?.min || 0, max: price[0]?.max || 0 },
       propertyTypes: types.filter(Boolean).sort(),
       amenities: amenities.map((a) => ({ id: String(a._id), name: a.name, category: a.category })),
@@ -129,9 +134,10 @@ export async function suggestions(req, res) {
   const q = String(req.query.q || '').trim()
   if (q.length < 2) return res.json({ success: true, data: [] })
   const rx = new RegExp(escapeRx(q), 'i')
+  const live = await inActiveState()
   const [cities, villas] = await Promise.all([
-    Hotel.aggregate([{ $match: { status: 'Active', city: rx } }, { $group: { _id: '$city', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 4 }]),
-    Hotel.find({ status: 'Active', name: rx }).sort({ rating: -1 }).limit(5).select('name city').lean(),
+    Hotel.aggregate([{ $match: { status: 'Active', ...live, city: rx } }, { $group: { _id: '$city', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 4 }]),
+    Hotel.find({ status: 'Active', ...live, name: rx }).sort({ rating: -1 }).limit(5).select('name city').lean(),
   ])
   res.json({
     success: true,
@@ -145,7 +151,7 @@ export async function suggestions(req, res) {
 // GET /user/destinations: every city that has active villas
 export async function destinations(req, res) {
   const rows = await Hotel.aggregate([
-    { $match: { status: 'Active' } },
+    { $match: { status: 'Active', ...(await inActiveState()) } },
     { $sort: { rating: -1, startingPrice: 1 } },
     {
       $group: {

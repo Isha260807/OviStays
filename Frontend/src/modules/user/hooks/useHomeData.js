@@ -23,16 +23,23 @@ function resolveAssets(data) {
   return { hero: withUrl(data.hero || {}, ['image']), sections }
 }
 
+// The last Home page that was loaded, kept for the whole visit. Coming back to Home shows it at once while a fresh
+// copy is fetched in the background, so the page is never blank after the first time.
+let cached = null
+
 // The Home page layout and content, managed from Admin > Home Management > Home Page Design.
 export function useHomeData() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState(cached)
+  const [loading, setLoading] = useState(!cached)
 
   useEffect(() => {
     let alive = true
     api.get('/user/home')
       .then((res) => {
-        if (alive && res.data?.success) setData(resolveAssets(res.data.data))
+        if (res.data?.success) {
+          cached = resolveAssets(res.data.data)
+          if (alive) setData(cached)
+        }
       })
       .catch((err) => console.warn('Could not load the home page:', err.message))
       .finally(() => alive && setLoading(false))

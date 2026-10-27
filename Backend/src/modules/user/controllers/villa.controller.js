@@ -1,3 +1,4 @@
+import { inActiveState } from '../../../utils/activeStates.js'
 import mongoose from 'mongoose'
 import Hotel from '../../../models/Hotel.model.js'
 import Amenity from '../../../models/Amenity.model.js'
@@ -46,7 +47,7 @@ const derivedHighlights = (h) => [
 export async function getVilla(req, res) {
   const { id } = req.params
   if (!mongoose.isValidObjectId(id)) throw notFound('Villa not found')
-  const h = await Hotel.findOne({ _id: id, status: 'Active' }).lean()
+  const h = await Hotel.findOne({ _id: id, status: 'Active', ...(await inActiveState()) }).lean()
   if (!h) throw notFound('Villa not found')
 
   const [settings, amenities, reviews] = await Promise.all([

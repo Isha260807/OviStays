@@ -1,3 +1,4 @@
+import { inActiveState } from '../../../utils/activeStates.js'
 import mongoose from 'mongoose'
 import Booking from '../../../models/Booking.model.js'
 import Hotel from '../../../models/Hotel.model.js'
@@ -61,7 +62,7 @@ export function bookingConfig(villa) {
 }
 
 async function publicVilla(id) {
-  const villa = await Hotel.findOne({ _id: validId(id, 'Villa'), status: 'Active' })
+  const villa = await Hotel.findOne({ _id: validId(id, 'Villa'), status: 'Active', ...(await inActiveState()) })
   if (!villa || (villa.listingStatus && villa.listingStatus !== 'Approved')) throw notFound('Villa not found')
   return villa
 }

@@ -1,3 +1,4 @@
+import { isInActiveState } from '../../../utils/activeStates.js'
 import crypto from 'crypto'
 import Booking from '../../../models/Booking.model.js'
 import Hotel from '../../../models/Hotel.model.js'
@@ -46,6 +47,7 @@ async function loadBookableVilla(villaId) {
   const villa = await Hotel.findById(villaId)
   const approved = villa && villa.status === 'Active' && (!villa.listingStatus || villa.listingStatus === 'Approved')
   if (!approved) throw notFound('Villa not found')
+  if (!(await isInActiveState(villa))) throw new HttpError(409, 'Bookings are not open in this state right now')
   if (villa.ownerId) {
     const owner = await Owner.findById(villa.ownerId).select('status').lean()
     if (!owner || owner.status !== 'Active') throw new HttpError(409, 'This villa is not taking bookings right now')

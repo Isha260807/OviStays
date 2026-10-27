@@ -15,7 +15,7 @@ const SORTS = [
   { value: 'rating', label: 'Top rated' },
   { value: 'newest', label: 'Newest' },
 ]
-const FILTER_KEYS = ['city', 'type', 'minPrice', 'maxPrice', 'rating', 'bedrooms', 'amenities']
+const FILTER_KEYS = ['state', 'city', 'type', 'minPrice', 'maxPrice', 'rating', 'bedrooms', 'amenities']
 const border = { borderColor: '#E2EDF5' }
 const fieldCls = 'w-full rounded-xl border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#55B8F5]/40 focus:border-[#55B8F5]'
 
@@ -134,12 +134,22 @@ function FilterSheet({ open, onClose, meta, params, onApply }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+          {meta?.states?.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold mb-2">State</h3>
+              <select value={draft.state || ''} onChange={(e) => setDraft((d) => ({ ...d, state: e.target.value, city: '' }))} className={fieldCls} style={border}>
+                <option value="">All states</option>
+                {meta.states.map((x) => <option key={x.state} value={x.state}>{x.state} ({x.count})</option>)}
+              </select>
+            </section>
+          )}
+
           {meta?.cities?.length > 0 && (
             <section>
               <h3 className="text-sm font-bold mb-2">City</h3>
               <select value={draft.city || ''} onChange={set('city')} className={fieldCls} style={border}>
                 <option value="">All cities</option>
-                {meta.cities.map((c) => <option key={c.city} value={c.city}>{c.city} ({c.count})</option>)}
+                {meta.cities.filter((c) => !draft.state || c.state === draft.state).map((c) => <option key={`${c.state}-${c.city}`} value={c.city}>{c.city} ({c.count})</option>)}
               </select>
             </section>
           )}
@@ -280,6 +290,7 @@ export default function VillaSearch() {
   const get = (k) => params.get(k) || ''
   const activeFilters = FILTER_KEYS.filter((k) => get(k)).length
   const chips = [
+    get('state') && { key: 'state', label: get('state') },
     get('city') && { key: 'city', label: get('city') },
     get('type') && { key: 'type', label: get('type').replace(/-/g, ' ') },
     (get('minPrice') || get('maxPrice')) && { key: 'price', label: `₹${get('minPrice') || 0} - ${get('maxPrice') ? `₹${get('maxPrice')}` : 'any'}`, clear: ['minPrice', 'maxPrice'] },

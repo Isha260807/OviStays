@@ -83,19 +83,17 @@ export const listConfigs = {
     ],
   },
   locations: {
-    title: "Locations", subtitle: "Cities where OviStays operates", endpoint: "locations",
-    columns: [ID, t("image", "Image", "image"), t("city", "City"), t("state", "State"), t("hotels", "Hotels"), STATUS],
-    statusOptions: ACTIVE, statusEditable: true, addLabel: "Add Location",
+    title: "Locations", subtitle: "States where OviStays operates. Owners add villas, and guests book them, only in these states.", endpoint: "locations",
+    columns: [ID, t("image", "Image", "image"), t("state", "State"), t("hotels", "Villas"), STATUS],
+    statusOptions: ACTIVE, statusEditable: true, addLabel: "Add State",
     addFields: [
-      { name: "city", label: "City", required: true },
-      { name: "state", label: "State", required: true },
-      { name: "image", label: "Location image (shown on the app home page)", type: "image", preset: "misc", full: true },
+      { name: "state", label: "State", required: true, placeholder: "e.g. Rajasthan" },
+      { name: "image", label: "State image (shown on the app home page)", type: "image", preset: "misc", full: true },
     ],
-    // The city name cannot change: villas are linked to their city by name
-    editTitleKey: "city",
+    // The state name cannot change: villas are linked to their state by name
+    editTitleKey: "state",
     editFields: [
-      { name: "state", label: "State", required: true },
-      { name: "image", label: "Location image (shown on the app home page)", type: "image", preset: "misc", full: true },
+      { name: "image", label: "State image (shown on the app home page)", type: "image", preset: "misc", full: true },
     ],
   },
 
@@ -211,7 +209,7 @@ export const formConfigs = {
         fields: [
           { name: "address", label: "Address", full: true },
           { name: "city", label: "City", required: true },
-          { name: "state", label: "State" },
+          { name: "state", label: "State", type: "select", optionsFrom: "locations", required: true },
           { name: "pincode", label: "Pincode" },
         ],
       },

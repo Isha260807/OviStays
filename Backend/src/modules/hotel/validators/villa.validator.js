@@ -78,7 +78,8 @@ export function cleanVilla(b = {}) {
   if (has('propertyType')) set.propertyType = text(b.propertyType, 40, 'Property type') || 'Private Villa'
   if (has('address')) set.address = text(b.address, 250, 'Address')
   if (has('locality')) set.locality = text(b.locality, 80, 'Locality')
-  if (has('city')) set.city = text(b.city, 60, 'City', { required: true })
+  // "jaipur  city" and "Jaipur City" become one spelling, so guests find every villa of a city together
+  if (has('city')) set.city = text(b.city, 60, 'City', { required: true }).replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s-])(\S)/g, (m, a, c) => a + c.toUpperCase())
   if (has('state')) set.state = text(b.state, 60, 'State')
   if (has('country')) set.country = text(b.country, 60, 'Country') || 'India'
   if (has('pincode')) {
@@ -161,6 +162,7 @@ export function missingForSubmit(v) {
   const missing = []
   if (!v.name || v.name.length < 3) missing.push('villa name')
   if ((v.description || '').length < 30) missing.push('a description of at least 30 characters')
+  if (!v.state) missing.push('state')
   if (!v.city) missing.push('city')
   if (!v.address) missing.push('full address')
   if (!v.coverImage) missing.push('cover photo')
