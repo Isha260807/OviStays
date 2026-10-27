@@ -2,11 +2,11 @@ import crypto from 'crypto'
 import Hotel from '../../../models/Hotel.model.js'
 import AvailabilityBlock from '../../../models/AvailabilityBlock.model.js'
 import { HttpError } from '../../../utils/httpError.js'
-import { DEFAULT_TZ, MINUTE, addDays, eachDate, fromMinutes, toMinutes, zonedToUtc } from '../../../utils/time.js'
+import { DEFAULT_TZ, MINUTE, addDays, eachDate, zonedToUtc } from '../../../utils/time.js'
 import { assertBookable, nightStart, nightlyRate } from './pricing.service.js'
 
 // One authoritative calendar per villa. All booking modes read and write the same AvailabilityBlock rows,
-// so a night stay, a day-use package and an hourly slot can never overlap each other.
+// so a day, a night stay, a full day & night, a weekly and a monthly booking can never overlap each other.
 
 const LOCK_MS = 8000
 const LOCK_WAIT_MS = 5000
@@ -101,7 +101,7 @@ export async function nightAvailability(villa, rules, from, to, { now = new Date
   })
 }
 
-// Day-use packages and hourly start times that are free on one date
+// Whether the Day and the Full day & night bookings are free on one date
 export async function daySlots(villa, date, { now = new Date() } = {}) {
   const tz = villa.timezone || DEFAULT_TZ
   const dayStart = zonedToUtc(date, '00:00', tz)
@@ -119,39 +119,15 @@ export async function daySlots(villa, date, { now = new Date() } = {}) {
   }
 
   const modes = villa.bookingModes || {}
-  const out = { date, dayUse: [], hourly: [], hourlyFlex: null }
+  const out = { date, day: null, fullDayNight: null }
 
-  if (modes.dayUse?.enabled) {
-    out.dayUse = (modes.dayUse.packages || []).map((p) => ({
-      packageId: String(p._id), name: p.name, startTime: p.startTime, endTime: p.endTime, pricePaise: p.pricePaise, maxGuests: p.maxGuests,
-      available: free(zonedToUtc(date, p.startTime, tz), zonedToUtc(date, p.endTime, tz)),
-    }))
+  if (modes.day?.enabled) {
+    const d = modes.day
+    out.day = { startTime: d.startTime, endTime: d.endTime, pricePaise: d.pricePaise, maxGuests: d.maxGuests, available: free(zonedToUtc(date, d.startTime, tz), zonedToUtc(date, d.endTime, tz)) }
   }
-
-  if (modes.hourly?.enabled && modes.hourly.pricePerHourPaise > 0) {
-    // Pay-per-hour: for each start time, how many hours in a row are free (up to the maximum and the closing time)
-    const { openTime, closeTime, startStepMinutes = 60, pricePerHourPaise, minHours = 1, maxHours = 12 } = modes.hourly
-    const starts = []
-    for (let t = toMinutes(openTime); t + minHours * 60 <= toMinutes(closeTime); t += startStepMinutes) {
-      const start = zonedToUtc(date, fromMinutes(t), tz)
-      let maxFree = 0
-      for (let h = minHours; h <= maxHours && t + h * 60 <= toMinutes(closeTime); h++) {
-        if (free(start, new Date(start.getTime() + h * 60 * MINUTE))) maxFree = h
-        else break
-      }
-      starts.push({ time: fromMinutes(t), maxHours: maxFree, available: maxFree >= minHours })
-    }
-    out.hourlyFlex = { pricePerHourPaise, minHours, maxHours, openTime, closeTime, starts }
-  } else if (modes.hourly?.enabled) {
-    const { openTime, closeTime, startStepMinutes = 60, durations = [] } = modes.hourly
-    out.hourly = durations.map((d) => {
-      const starts = []
-      for (let t = toMinutes(openTime); t + d.minutes <= toMinutes(closeTime); t += startStepMinutes) {
-        const start = zonedToUtc(date, fromMinutes(t), tz)
-        starts.push({ time: fromMinutes(t), available: free(start, new Date(start.getTime() + d.minutes * MINUTE)) })
-      }
-      return { durationMinutes: d.minutes, pricePaise: d.pricePaise, starts }
-    })
+  if (modes.fullDayNight?.enabled) {
+    const f = modes.fullDayNight
+    out.fullDayNight = { startTime: f.startTime, endTime: f.endTime, pricePaise: f.pricePaise, maxGuests: f.maxGuests, available: free(zonedToUtc(date, f.startTime, tz), zonedToUtc(addDays(date, 1), f.endTime, tz)) }
   }
   return out
 }

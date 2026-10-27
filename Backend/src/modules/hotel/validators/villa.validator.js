@@ -44,31 +44,27 @@ function modes(input, current = {}) {
     if (minNights > maxNights) throw badRequest('Minimum nights cannot be more than maximum nights')
     out.night = { enabled: Boolean(n.enabled), minNights, maxNights }
   }
-  if (input.dayUse) {
-    const d = input.dayUse
-    const packages = (Array.isArray(d.packages) ? d.packages : []).map((p, i) => {
-      const startTime = time(p.startTime, `Package ${i + 1} start time`)
-      const endTime = time(p.endTime, `Package ${i + 1} end time`)
-      if (toMinutes(endTime) <= toMinutes(startTime)) throw badRequest(`Package ${i + 1} must end after it starts`)
-      const price = paise(p.pricePaise, `Package ${i + 1} price`)
-      if (!price) throw badRequest(`Package ${i + 1} needs a price`)
-      const pkg = { name: text(p.name, 40, `Package ${i + 1} name`, { required: true }), startTime, endTime, pricePaise: price, maxGuests: int(p.maxGuests ?? 0, `Package ${i + 1} guests`, 0, 200) }
-      if (p.id && mongoose.isValidObjectId(p.id)) pkg._id = p.id // keeps existing bookings pointing at the same package
-      return pkg
-    })
-    if (packages.length > 10) throw badRequest('Add at most 10 day-use packages')
-    out.dayUse = { enabled: Boolean(d.enabled), packages }
+  for (const key of ['day', 'fullDayNight']) {
+    if (!input[key]) continue
+    const d = input[key]
+    const label = key === 'day' ? 'Day' : 'Full day & night'
+    const startTime = time(d.startTime ?? '10:00', `${label} start time`)
+    const endTime = time(d.endTime ?? (key === 'day' ? '18:00' : '10:00'), `${label} end time`)
+    // a day ends the same day it starts; a full day & night ends the next day, so only the day needs the order check
+    if (key === 'day' && toMinutes(endTime) <= toMinutes(startTime)) throw badRequest('Day must end after it starts')
+    if (key === 'day' && (toMinutes(startTime) < 6 * 60 || toMinutes(endTime) > 18 * 60)) throw badRequest('Day bookings are for daytime only: between 6:00 AM and 6:00 PM')
+    out[key] = { enabled: Boolean(d.enabled), startTime, endTime, pricePaise: paise(d.pricePaise, `${label} price`), maxGuests: int(d.maxGuests ?? 0, `${label} guests`, 0, 200) }
+    if (out[key].enabled && !out[key].pricePaise) throw badRequest(`Set a price for ${label}`)
   }
-  if (input.hourly) {
-    const h = input.hourly
-    const openTime = time(h.openTime ?? '09:00', 'Opening time')
-    const closeTime = time(h.closeTime ?? '21:00', 'Closing time')
-    if (toMinutes(closeTime) <= toMinutes(openTime)) throw badRequest('Closing time must be after opening time')
-    const minHours = int(h.minHours ?? 1, 'Minimum hours', 1, 24)
-    const maxHours = int(h.maxHours ?? 12, 'Maximum hours', 1, 24)
-    if (minHours > maxHours) throw badRequest('Minimum hours cannot be more than maximum hours')
-    out.hourly = { enabled: Boolean(h.enabled), openTime, closeTime, startStepMinutes: int(h.startStepMinutes ?? 60, 'Start step', 15, 240), durations: [], pricePerHourPaise: paise(h.pricePerHourPaise, 'Price per hour'), minHours, maxHours }
-    if (out.hourly.enabled && !out.hourly.pricePerHourPaise) throw badRequest('Set a price per hour for hourly slots')
+  for (const key of ['weekly', 'monthly']) {
+    if (!input[key]) continue
+    const w = input[key]
+    const label = key === 'weekly' ? 'Weekly' : 'Monthly'
+    const minNights = int(w.minNights ?? (key === 'weekly' ? 7 : 28), `${label} minimum nights`, 1, 365)
+    const maxNights = int(w.maxNights ?? 365, `${label} maximum nights`, 1, 365)
+    if (minNights > maxNights) throw badRequest(`${label} minimum nights cannot be more than maximum nights`)
+    out[key] = { enabled: Boolean(w.enabled), minNights, maxNights, pricePerNightPaise: paise(w.pricePerNightPaise, `${label} price per night`) }
+    if (out[key].enabled && !out[key].pricePerNightPaise) throw badRequest(`Set a price per night for ${label}`)
   }
   return out
 }
@@ -127,8 +123,14 @@ export function cleanVilla(b = {}) {
     if (!Array.isArray(b.houseRules) || b.houseRules.length > 20) throw badRequest('Add at most 20 house rules')
     set.houseRules = b.houseRules.map((r) => text(r, 150, 'House rule')).filter(Boolean)
   }
-  if (has('checkInTime')) set.checkInTime = time(b.checkInTime, 'Check-in time')
-  if (has('checkOutTime')) set.checkOutTime = time(b.checkOutTime, 'Check-out time')
+  if (has('checkInTime')) {
+    set.checkInTime = time(b.checkInTime, 'Check-in time')
+    if (toMinutes(set.checkInTime) < 12 * 60) throw badRequest('Night check-in is from 12:00 PM to 11:59 PM')
+  }
+  if (has('checkOutTime')) {
+    set.checkOutTime = time(b.checkOutTime, 'Check-out time')
+    if (toMinutes(set.checkOutTime) < 5 * 60 || toMinutes(set.checkOutTime) > 12 * 60) throw badRequest('Night check-out is the next morning, from 5:00 AM to 12:00 PM')
+  }
   if (has('timezone')) {
     if (!isValidTz(b.timezone)) throw badRequest('Time zone is not valid')
     set.timezone = b.timezone
@@ -169,8 +171,10 @@ export function missingForSubmit(v) {
   const m = v.bookingModes || {}
   const priced = [
     m.night?.enabled && v.pricing?.basePricePaise > 0,
-    m.dayUse?.enabled && m.dayUse.packages?.length > 0,
-    m.hourly?.enabled && m.hourly.pricePerHourPaise > 0,
+    m.day?.enabled && m.day.pricePaise > 0,
+    m.fullDayNight?.enabled && m.fullDayNight.pricePaise > 0,
+    m.weekly?.enabled && m.weekly.pricePerNightPaise > 0,
+    m.monthly?.enabled && m.monthly.pricePerNightPaise > 0,
   ].some(Boolean)
   if (!priced) missing.push('at least one booking type with a price')
   return missing

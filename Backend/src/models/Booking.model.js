@@ -11,7 +11,8 @@ export const BOOKING_STATUSES = [
 export const REVENUE_STATUSES = ['Confirmed', 'Checked In', 'Checked Out', 'No Show']
 // Statuses that keep the villa's calendar blocked
 export const LIVE_STATUSES = ['Requested', 'Awaiting Payment', 'Confirmed', 'Checked In']
-export const BOOKING_MODES = ['night', 'dayUse', 'hourly']
+// day, night, fullDayNight, weekly and monthly are what guests can book now; dayUse and hourly are older bookings
+export const BOOKING_MODES = ['day', 'night', 'fullDayNight', 'weekly', 'monthly', 'dayUse', 'hourly']
 export const PAYMENT_STATUSES = ['Unpaid', 'Paid', 'Failed', 'Refund Pending', 'Partially Refunded', 'Refunded']
 
 const paise = { type: Number, default: 0, min: 0, validate: { validator: Number.isInteger, message: 'Amounts must be whole paise' } }

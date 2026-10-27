@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Search, Plus, Eye, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { Search, Plus, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import PageHeader from "../components/ui/PageHeader.jsx"
 import StatusBadge from "../components/ui/StatusBadge.jsx"
@@ -14,7 +14,8 @@ import { assetUrl } from "@/services/api/config.js"
 const PAGE_SIZE = 10
 
 // config: { title, subtitle, endpoint, columns, statusOptions?, fixedStatus?, statusEditable?, deletable?,
-//           addLabel?, addFields?, addPath?, rowActions? }
+//           addLabel?, addFields?, addPath?, rowActions?, editFields?, editTitleKey? }
+// editFields adds a pencil button on each row that opens those fields for editing.
 // column: { key, label, type?: "text"|"status"|"money"|"stars" }
 function renderCell(col, row) {
   const v = row[col.key]
@@ -33,7 +34,7 @@ function renderCell(col, row) {
 }
 
 export default function ListPage({ config }) {
-  const { title, subtitle, endpoint, columns, statusOptions, fixedStatus, statusEditable, addLabel, addFields, addPath, rowActions } = config
+  const { title, subtitle, endpoint, columns, statusOptions, fixedStatus, statusEditable, addLabel, addFields, addPath, rowActions, editFields } = config
   const deletable = config.deletable !== false
   const navigate = useNavigate()
 
@@ -50,6 +51,8 @@ export default function ListPage({ config }) {
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [editForm, setEditForm] = useState({})
   const [viewing, setViewing] = useState(null)
   const [cancelling, setCancelling] = useState(null)
 
@@ -86,6 +89,22 @@ export default function ListPage({ config }) {
       setAdding(false)
       setForm({})
       setPage(1)
+      load()
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Edits send every field as it is, so a cleared field (like a removed image) is saved as empty
+  const handleEdit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await adminAPI.update(endpoint, editing._id, editForm)
+      toast.success(`${title}: changes saved`)
+      setEditing(null)
       load()
     } catch (err) {
       toast.error(errorMessage(err))
@@ -193,6 +212,7 @@ export default function ListPage({ config }) {
                         </button>
                       ))}
                       <button onClick={() => setViewing(row)} className="p-1.5 rounded hover:bg-neutral-100 text-neutral-600" title="View"><Eye className="w-4 h-4" /></button>
+                      {editFields && <button onClick={() => { setEditing(row); setEditForm(Object.fromEntries(editFields.map((f) => [f.name, row[f.name] ?? ""]))) }} className="p-1.5 rounded hover:bg-neutral-100 text-neutral-600" title="Edit"><Pencil className="w-4 h-4" /></button>}
                       {deletable && <button onClick={() => handleDelete(row)} className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>}
                     </div>
                   </td>
@@ -221,6 +241,18 @@ export default function ListPage({ config }) {
             <button type="submit" className={buttonPrimary} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={!!editing} title={`Edit ${title.replace(/s$/, "").toLowerCase()}${editing && config.editTitleKey ? `: ${editing[config.editTitleKey]}` : ""}`} onClose={() => setEditing(null)}>
+        {editing && (
+          <form onSubmit={handleEdit} className="space-y-5">
+            <FormGrid fields={editFields} values={editForm} onChange={(k, v) => setEditForm((f) => ({ ...f, [k]: v }))} />
+            <div className="flex justify-end gap-2">
+              <button type="button" className={buttonOutline} onClick={() => setEditing(null)}>Cancel</button>
+              <button type="submit" className={buttonPrimary} disabled={saving}>{saving ? "Saving..." : "Save changes"}</button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       <Modal open={!!viewing} title={`${title} details`} onClose={() => setViewing(null)}>

@@ -10,7 +10,7 @@ const blockSchema = new mongoose.Schema(
     villa: { type: mongoose.Schema.Types.ObjectId, ref: 'Hotel', required: true },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'Owner', index: true },
     type: { type: String, enum: BLOCK_TYPES, required: true },
-    mode: { type: String, enum: ['night', 'dayUse', 'hourly', 'manual'], default: 'manual' },
+    mode: { type: String, enum: ['day', 'night', 'fullDayNight', 'weekly', 'monthly', 'dayUse', 'hourly', 'manual'], default: 'manual' },
     booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
     startAt: { type: Date, required: true },
     endAt: { type: Date, required: true },

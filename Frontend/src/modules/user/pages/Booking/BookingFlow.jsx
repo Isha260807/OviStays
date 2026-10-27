@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Minus, Plus, Tag } from 'lucide-react'
+import { CalendarDays, CalendarRange, ChevronLeft, Minus, Moon, Plus, Sun, SunMoon, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import api, { errorMessage } from '@/services/api/axios.js'
 import { assetUrl } from '@/services/api/config.js'
@@ -13,24 +13,36 @@ import { MODE_LABEL, formatPaise, fullDate, localTimeOf, todayStr, addDays } fro
 
 const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random())
 
-function ModeTabs({ modes, mode, onChange }) {
-  return (
-    <div role="tablist" className="flex gap-2 flex-wrap">
-      {modes.map((m) => (
-        <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => onChange(m)}
-          className={`rounded-full border px-4 py-2 text-sm font-semibold cursor-pointer ${mode === m ? 'text-white border-transparent' : 'bg-white'}`}
-          style={mode === m ? { background: C.primaryDark } : border}>
-          {MODE_LABEL[m]}
-        </button>
-      ))}
-    </div>
-  )
+// The five ways to book the whole villa. A type the villa does not offer stays visible but cannot be picked.
+const MODE_ORDER = ['day', 'night', 'fullDayNight', 'weekly', 'monthly']
+const RANGE_MODES = ['night', 'weekly', 'monthly']
+const MODE_INFO = {
+  day: { icon: Sun, hint: () => 'Daytime only' },
+  night: { icon: Moon, hint: () => 'Overnight stay' },
+  fullDayNight: { icon: SunMoon, hint: () => 'Day + night' },
+  weekly: { icon: CalendarDays, hint: (c) => `${c.minNights}+ nights` },
+  monthly: { icon: CalendarRange, hint: (c) => `${c.minNights}+ nights` },
 }
 
-const endTime = (start, hours) => {
-  const [h, m] = start.split(':').map(Number)
-  const t = h * 60 + m + hours * 60
-  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+function ModeCards({ cfg, mode, onChange }) {
+  return (
+    <div role="radiogroup" aria-label="Booking type" className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+      {MODE_ORDER.map((m, i) => {
+        const { icon: Icon, hint } = MODE_INFO[m]
+        const on = mode === m
+        const offered = Boolean(cfg[m]?.enabled)
+        return (
+          <button key={m} type="button" role="radio" aria-checked={on} disabled={!offered} onClick={() => onChange(m)}
+            className={`flex min-h-[88px] flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55B8F5] disabled:cursor-not-allowed disabled:opacity-45 ${i === 4 ? 'col-span-2 sm:col-span-1' : ''} ${on ? 'text-white border-transparent shadow-md' : 'bg-white hover:bg-[#EEF9FF] cursor-pointer'}`}
+            style={on ? { background: C.primaryDark } : border}>
+            <Icon className="h-5 w-5" />
+            <span className="text-sm font-semibold leading-tight">{MODE_LABEL[m]}</span>
+            <span className="text-[11px] leading-tight" style={on ? { color: 'rgba(255,255,255,0.85)' } : { color: C.muted }}>{offered ? hint(cfg[m]) : 'Not offered'}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function Stepper({ value, onChange, min = 1, max = 50 }) {
@@ -43,8 +55,8 @@ function Stepper({ value, onChange, min = 1, max = 50 }) {
   )
 }
 
-// Day-use packages and hourly start times for one date, as the server reports them (taken ones are disabled)
-function SlotPicker({ villaId, mode, cfg, value, onChange }) {
+// One date for a Day or a Full day & night booking; the server says whether that date is free
+function DayPicker({ villaId, mode, cfg, value, onChange }) {
   const [date, setDate] = useState(value.date || '')
   const [slots, setSlots] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -60,106 +72,33 @@ function SlotPicker({ villaId, mode, cfg, value, onChange }) {
     return () => { alive = false }
   }, [villaId, date])
 
-  const pickDate = (d) => { setDate(d); onChange({ date: d }) }
-  const max = addDays(todayStr(), 365)
+  const pickDate = (d) => { setDate(d); onChange(d ? { date: d } : {}) }
+  const free = slots?.[mode]?.available
+  const times = mode === 'day' ? `${cfg.startTime} – ${cfg.endTime}` : `${cfg.startTime} → ${cfg.endTime} next day`
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
         <label htmlFor="slot-date" className="block text-sm font-semibold mb-1.5">Date</label>
-        <input id="slot-date" type="date" min={todayStr()} max={max} value={date} onChange={(e) => pickDate(e.target.value)} className="rounded-xl border bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#55B8F5]/40" style={border} />
+        <input id="slot-date" type="date" min={todayStr()} max={addDays(todayStr(), 365)} value={date} onChange={(e) => pickDate(e.target.value)} className="rounded-xl border bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#55B8F5]/40" style={border} />
       </div>
-      {failed && <p className="text-sm text-red-600">Could not load the times. Please try again.</p>}
+      <div className="rounded-2xl border p-3.5 flex items-center justify-between gap-3" style={border}>
+        <span>
+          <span className="block font-semibold">{MODE_LABEL[mode]}</span>
+          <span className="block text-xs" style={{ color: C.muted }}>{times}{cfg.maxGuests ? ` · up to ${cfg.maxGuests} guests` : ''}</span>
+        </span>
+        <span className="text-right">
+          <span className="block font-bold" style={{ color: C.primaryDark }}>{formatPaise(cfg.pricePaise)}</span>
+          {slots && <span className={`block text-xs ${free ? 'text-emerald-700' : 'text-red-600'}`}>{free ? 'Available' : 'Not available'}</span>}
+        </span>
+      </div>
+      {failed && <p className="text-sm text-red-600">Could not check this date. Please try again.</p>}
       {date && !slots && !failed && <p className="text-sm" style={{ color: C.muted }}>Checking availability…</p>}
-
-      {slots && mode === 'dayUse' && (
-        <div className="grid gap-2.5">
-          {slots.dayUse.length === 0 && <p className="text-sm" style={{ color: C.muted }}>No day-use packages are offered.</p>}
-          {slots.dayUse.map((p) => (
-            <button key={p.packageId} type="button" disabled={!p.available} onClick={() => onChange({ date, packageId: p.packageId })}
-              className={`text-left rounded-2xl border p-3.5 flex items-center justify-between gap-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${value.packageId === p.packageId ? 'ring-2 ring-[#168AD3]' : ''}`} style={border}>
-              <span>
-                <span className="block font-semibold">{p.name}</span>
-                <span className="block text-xs" style={{ color: C.muted }}>{p.startTime} – {p.endTime}{p.maxGuests ? ` · up to ${p.maxGuests} guests` : ''}</span>
-              </span>
-              <span className="text-right">
-                <span className="block font-bold" style={{ color: C.primaryDark }}>{formatPaise(p.pricePaise)}</span>
-                {!p.available && <span className="block text-xs text-red-600">Not available</span>}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {slots && mode === 'hourly' && slots.hourlyFlex && (() => {
-        const f = slots.hourlyFlex
-        const chosen = f.starts.find((x) => x.time === value.startTime)
-        const hours = value.durationMinutes ? value.durationMinutes / 60 : 0
-        return (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-semibold mb-1.5">Start time <span className="font-normal" style={{ color: C.muted }}>· {formatPaise(f.pricePerHourPaise)} per hour, open {f.openTime} – {f.closeTime}</span></p>
-              <div className="flex flex-wrap gap-2">
-                {f.starts.map((s) => (
-                  <button key={s.time} type="button" disabled={!s.available} onClick={() => onChange({ date, startTime: s.time, durationMinutes: Math.min(Math.max(hours || f.minHours, f.minHours), s.maxHours) * 60 })}
-                    className={`rounded-lg border px-3 py-2 text-sm cursor-pointer disabled:opacity-40 disabled:line-through disabled:cursor-not-allowed ${value.startTime === s.time ? 'text-white border-transparent' : 'bg-white'}`}
-                    style={value.startTime === s.time ? { background: C.primaryDark } : border}>{s.time}</button>
-                ))}
-              </div>
-            </div>
-            {chosen && (
-              <div>
-                <p className="text-sm font-semibold mb-1.5">How many hours?</p>
-                <div className="flex items-center gap-4">
-                  <Stepper value={hours} min={f.minHours} max={chosen.maxHours} onChange={(h) => onChange({ ...value, durationMinutes: h * 60 })} />
-                  <p className="text-sm">{value.startTime} → <b>{endTime(value.startTime, hours)}</b></p>
-                </div>
-                <p className="mt-1.5 text-xs" style={{ color: C.muted }}>{formatPaise(f.pricePerHourPaise)} × {hours} hour{hours > 1 ? 's' : ''} = <b style={{ color: C.primaryDark }}>{formatPaise(f.pricePerHourPaise * hours)}</b>. You can stay up to {chosen.maxHours} hour{chosen.maxHours > 1 ? 's' : ''} from {value.startTime} (the next booking or closing time stops it).</p>
-              </div>
-            )}
-          </div>
-        )
-      })()}
-
-      {slots && mode === 'hourly' && !slots.hourlyFlex && (
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-semibold mb-1.5">Slot length</p>
-            <div className="flex flex-wrap gap-2">
-              {cfg.durations.map((d) => (
-                <button key={d.minutes} type="button" onClick={() => onChange({ date, durationMinutes: d.minutes, startTime: '' })}
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold cursor-pointer ${value.durationMinutes === d.minutes ? 'text-white border-transparent' : 'bg-white'}`}
-                  style={value.durationMinutes === d.minutes ? { background: C.primaryDark } : border}>
-                  {d.minutes / 60} hr · {formatPaise(d.pricePaise)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {value.durationMinutes && (
-            <div>
-              <p className="text-sm font-semibold mb-1.5">Start time</p>
-              <div className="flex flex-wrap gap-2">
-                {(slots.hourly.find((h) => h.durationMinutes === value.durationMinutes)?.starts || []).map((s) => (
-                  <button key={s.time} type="button" disabled={!s.available} onClick={() => onChange({ ...value, date, startTime: s.time })}
-                    className={`rounded-lg border px-3 py-2 text-sm cursor-pointer disabled:opacity-40 disabled:line-through disabled:cursor-not-allowed ${value.startTime === s.time ? 'text-white border-transparent' : 'bg-white'}`}
-                    style={value.startTime === s.time ? { background: C.primaryDark } : border}>
-                    {s.time}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
 
-const complete = (mode, sel) => {
-  if (mode === 'night') return Boolean(sel.checkIn && sel.checkOut)
-  if (mode === 'dayUse') return Boolean(sel.date && sel.packageId)
-  return Boolean(sel.date && sel.durationMinutes && sel.startTime)
-}
+const complete = (mode, sel) => (RANGE_MODES.includes(mode) ? Boolean(sel.checkIn && sel.checkOut) : Boolean(sel.date))
 
 export default function BookingFlow() {
   const { id } = useParams()
@@ -167,7 +106,7 @@ export default function BookingFlow() {
   const { villa, loading, notFound } = useVillaDetails(id)
   const cfg = villa?.booking
 
-  const modes = useMemo(() => (cfg ? ['night', 'dayUse', 'hourly'].filter((m) => cfg[m]?.enabled) : []), [cfg])
+  const modes = useMemo(() => (cfg ? MODE_ORDER.filter((m) => cfg[m]?.enabled) : []), [cfg])
   const [mode, setMode] = useState('')
   const [sel, setSel] = useState({})
   const [guests, setGuests] = useState(2)
@@ -182,7 +121,7 @@ export default function BookingFlow() {
   useEffect(() => { if (!mode && modes.length) setMode(modes[0]) }, [modes, mode])
 
   const changeMode = (m) => { setMode(m); setSel({}); setQuote(null); setQuoteError('') }
-  const maxGuests = mode === 'dayUse' ? (cfg?.dayUse.packages.find((p) => p.id === sel.packageId)?.maxGuests || villa?.maxGuests || 50) : (villa?.maxGuests || 50)
+  const maxGuests = (mode === 'day' || mode === 'fullDayNight' ? cfg?.[mode]?.maxGuests : 0) || villa?.maxGuests || 50
 
   // Price the selection whenever it changes
   const selKey = JSON.stringify([mode, sel, guests, appliedCoupon])
@@ -231,14 +170,14 @@ export default function BookingFlow() {
           <div className="space-y-6">
             <section className="bg-white rounded-2xl border p-5 space-y-4" style={border}>
               <h2 className="font-semibold">1. What would you like to book?</h2>
-              {modes.length > 1 && <ModeTabs modes={modes} mode={mode} onChange={changeMode} />}
-              {mode === 'night' && (
-                <DateRangePicker villaId={id} checkIn={sel.checkIn} checkOut={sel.checkOut} minNights={cfg.night.minNights} maxNights={cfg.night.maxNights} checkInTime={cfg.checkInTime} checkOutTime={cfg.checkOutTime} arrival={sel.checkInTime} departure={sel.checkOutTime} onTimes={({ arrival, departure }) => setSel((s) => ({ ...s, checkInTime: arrival, checkOutTime: departure }))} otherModes={modes.filter((m) => m !== 'night')} onSwitchMode={changeMode} onChange={(r) => setSel({ ...r, checkInTime: '', checkOutTime: '' })} />
+              <ModeCards cfg={cfg} mode={mode} onChange={changeMode} />
+              {RANGE_MODES.includes(mode) && (
+                <DateRangePicker key={mode} villaId={id} checkIn={sel.checkIn} checkOut={sel.checkOut} minNights={cfg[mode].minNights} maxNights={cfg[mode].maxNights} ratePaise={mode === 'night' ? 0 : cfg[mode].pricePerNightPaise} checkInTime={cfg.checkInTime} checkOutTime={cfg.checkOutTime} arrival={sel.checkInTime} departure={sel.checkOutTime} onTimes={({ arrival, departure }) => setSel((s) => ({ ...s, checkInTime: arrival, checkOutTime: departure }))} otherModes={modes.filter((m) => m === 'day' || m === 'fullDayNight')} onSwitchMode={changeMode} onChange={(r) => setSel({ ...r, checkInTime: '', checkOutTime: '' })} />
               )}
-              {(mode === 'dayUse' || mode === 'hourly') && (
-                <SlotPicker key={mode} villaId={id} mode={mode} cfg={cfg[mode]} value={sel} onChange={setSel} />
+              {(mode === 'day' || mode === 'fullDayNight') && (
+                <DayPicker key={mode} villaId={id} mode={mode} cfg={cfg[mode]} value={sel} onChange={setSel} />
               )}
-              {mode === 'night' && <p className="text-xs" style={{ color: C.muted }}>You can arrive any time from {cfg.checkInTime} and must leave by {cfg.checkOutTime}. Pick your own times above once you choose the dates.</p>}
+              {RANGE_MODES.includes(mode) && <p className="text-xs" style={{ color: C.muted }}>You can arrive any time from {cfg.checkInTime} and must leave by {cfg.checkOutTime}. Pick your own times above once you choose the dates.</p>}
             </section>
 
             <section className="bg-white rounded-2xl border p-5 space-y-3" style={border}>
@@ -269,13 +208,13 @@ export default function BookingFlow() {
               {cover && <img src={assetUrl(cover)} alt="" className="w-20 h-16 rounded-xl object-cover" />}
               <div className="min-w-0">
                 <p className="font-semibold leading-tight truncate">{villa.name}</p>
-                <p className="text-xs" style={{ color: C.muted }}>{MODE_LABEL[mode]}{sel.checkIn && sel.checkOut ? ` · ${fullDate(sel.checkIn)}, ${quote ? localTimeOf(quote.startAt) : cfg.checkInTime} → ${fullDate(sel.checkOut)}, ${quote ? localTimeOf(quote.endAt) : cfg.checkOutTime}` : ''}{sel.date ? ` · ${fullDate(sel.date)}` : ''}{sel.startTime ? `, ${sel.startTime}` : ''}</p>
+                <p className="text-xs" style={{ color: C.muted }}>{MODE_LABEL[mode]}{sel.checkIn && sel.checkOut ? ` · ${fullDate(sel.checkIn)}, ${quote ? localTimeOf(quote.startAt) : cfg.checkInTime} → ${fullDate(sel.checkOut)}, ${quote ? localTimeOf(quote.endAt) : cfg.checkOutTime}` : ''}{sel.date ? ` · ${fullDate(sel.date)}` : ''}</p>
               </div>
             </div>
 
             {quoting && <p className="text-sm" style={{ color: C.muted }}>Calculating price…</p>}
             {quoteError && <p role="alert" className="text-sm text-red-600">{quoteError}</p>}
-            {!quote && !quoting && !quoteError && <p className="text-sm" style={{ color: C.muted }}>Choose your {mode === 'night' ? 'dates' : 'date and time'} to see the price.</p>}
+            {!quote && !quoting && !quoteError && <p className="text-sm" style={{ color: C.muted }}>Choose your {RANGE_MODES.includes(mode) ? 'dates' : 'date'} to see the price.</p>}
             {quote && <PriceBreakdown pricing={quote.pricing} />}
             {quote && !quote.available && <p role="alert" className="text-sm text-red-600">Sorry, that time was just taken. Please choose another.</p>}
 

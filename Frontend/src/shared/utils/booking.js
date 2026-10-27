@@ -45,7 +45,8 @@ export const timeOnly = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-IN'
 export const localDateOf = (iso) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date(iso))
 export const localTimeOf = (iso) => new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
 
-export const MODE_LABEL = { night: 'Night stay', dayUse: 'Day use', hourly: 'Hourly slot' }
+// dayUse and hourly are older bookings; guests can no longer book them
+export const MODE_LABEL = { day: 'Day', night: 'Night', fullDayNight: 'Full day & night', weekly: 'Weekly', monthly: 'Monthly', dayUse: 'Day use', hourly: 'Hourly slot' }
 
 // "2 hours 10 minutes left" style countdown from an ISO deadline
 export function timeLeft(iso, now = Date.now()) {
@@ -58,6 +59,6 @@ export function timeLeft(iso, now = Date.now()) {
 }
 
 export const slotText = (b) => {
-  if (b.mode === 'night') return `${dateOnly(b.checkIn)}, ${timeOnly(b.checkIn)} → ${dateOnly(b.checkOut)}, ${timeOnly(b.checkOut)} · ${b.nights} ${b.nights === 1 ? 'night' : 'nights'}`
+  if (['night', 'fullDayNight', 'weekly', 'monthly'].includes(b.mode)) return `${dateOnly(b.checkIn)}, ${timeOnly(b.checkIn)} → ${dateOnly(b.checkOut)}, ${timeOnly(b.checkOut)} · ${b.nights} ${b.nights === 1 ? 'night' : 'nights'}`
   return `${dateOnly(b.checkIn)}, ${timeOnly(b.checkIn)} – ${timeOnly(b.checkOut)}${b.slot?.packageName ? ` · ${b.slot.packageName}` : ''}`
 }

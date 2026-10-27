@@ -56,8 +56,10 @@ export const villaView = (h) => ({
   },
   bookingModes: {
     night: { enabled: Boolean(h.bookingModes?.night?.enabled), minNights: h.bookingModes?.night?.minNights || 1, maxNights: h.bookingModes?.night?.maxNights || 30 },
-    dayUse: { enabled: Boolean(h.bookingModes?.dayUse?.enabled), packages: (h.bookingModes?.dayUse?.packages || []).map((p) => ({ id: String(p._id), name: p.name, startTime: p.startTime, endTime: p.endTime, pricePaise: p.pricePaise, maxGuests: p.maxGuests })) },
-    hourly: { enabled: Boolean(h.bookingModes?.hourly?.enabled), openTime: h.bookingModes?.hourly?.openTime || '09:00', closeTime: h.bookingModes?.hourly?.closeTime || '21:00', startStepMinutes: h.bookingModes?.hourly?.startStepMinutes || 60, pricePerHourPaise: h.bookingModes?.hourly?.pricePerHourPaise || 0, minHours: h.bookingModes?.hourly?.minHours || 1, maxHours: h.bookingModes?.hourly?.maxHours || 12, durations: (h.bookingModes?.hourly?.durations || []).map((d) => ({ minutes: d.minutes, pricePaise: d.pricePaise })) },
+    day: { enabled: Boolean(h.bookingModes?.day?.enabled), startTime: h.bookingModes?.day?.startTime || '10:00', endTime: h.bookingModes?.day?.endTime || '18:00', pricePaise: h.bookingModes?.day?.pricePaise || 0, maxGuests: h.bookingModes?.day?.maxGuests || 0 },
+    fullDayNight: { enabled: Boolean(h.bookingModes?.fullDayNight?.enabled), startTime: h.bookingModes?.fullDayNight?.startTime || '10:00', endTime: h.bookingModes?.fullDayNight?.endTime || '10:00', pricePaise: h.bookingModes?.fullDayNight?.pricePaise || 0, maxGuests: h.bookingModes?.fullDayNight?.maxGuests || 0 },
+    weekly: { enabled: Boolean(h.bookingModes?.weekly?.enabled), minNights: h.bookingModes?.weekly?.minNights || 7, maxNights: h.bookingModes?.weekly?.maxNights || 365, pricePerNightPaise: h.bookingModes?.weekly?.pricePerNightPaise || 0 },
+    monthly: { enabled: Boolean(h.bookingModes?.monthly?.enabled), minNights: h.bookingModes?.monthly?.minNights || 28, maxNights: h.bookingModes?.monthly?.maxNights || 365, pricePerNightPaise: h.bookingModes?.monthly?.pricePerNightPaise || 0 },
   },
   rating: h.rating || 0,
   listingStatus: h.listingStatus || 'Draft',
@@ -130,11 +132,6 @@ export async function update(req, res) {
   else delete set.state
   if (!Object.keys(set).length) throw badRequest('Nothing to update')
 
-  // Day-use packages keep their id so bookings made on them stay valid
-  if (set.bookingModes?.dayUse) {
-    const existing = new Set((villa.bookingModes?.dayUse?.packages || []).map((p) => String(p._id)))
-    set.bookingModes.dayUse.packages = set.bookingModes.dayUse.packages.map((p) => (p._id && !existing.has(String(p._id)) ? { ...p, _id: undefined } : p))
-  }
   for (const [key, value] of Object.entries(set)) {
     if (key === 'pricing') {
       for (const [k, v] of Object.entries(value)) villa.set(`pricing.${k}`, v)

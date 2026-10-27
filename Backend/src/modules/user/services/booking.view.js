@@ -2,7 +2,7 @@ import { computeRefund } from './refund.policy.js'
 
 // How a booking looks to the guest and to the owner. Money is sent in paise and in rupees.
 
-const nightsOf = (b) => (b.mode === 'night' || !b.mode ? Math.max(Math.round((new Date(b.checkOut) - new Date(b.checkIn)) / 86400000), 1) : 0)
+const nightsOf = (b) => (['night', 'weekly', 'monthly', 'fullDayNight'].includes(b.mode) || !b.mode ? Math.max(Math.round((new Date(b.checkOut) - new Date(b.checkIn)) / 86400000), 1) : 0)
 
 const common = (b) => ({
   id: String(b._id),

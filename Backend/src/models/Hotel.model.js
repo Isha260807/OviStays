@@ -80,6 +80,36 @@ const hotelSchema = new mongoose.Schema(
         minNights: { type: Number, default: 1, min: 1, max: 365 },
         maxNights: { type: Number, default: 30, min: 1, max: 365 },
       },
+      // Day: the whole villa for daytime only, on one date
+      day: {
+        enabled: { type: Boolean, default: false },
+        startTime: hhmm('10:00'),
+        endTime: hhmm('18:00'),
+        pricePaise: paise,
+        maxGuests: { type: Number, default: 0, min: 0 },
+      },
+      // Full day & night: daytime and the overnight stay together, from startTime to endTime the next day
+      fullDayNight: {
+        enabled: { type: Boolean, default: false },
+        startTime: hhmm('10:00'),
+        endTime: hhmm('10:00'),
+        pricePaise: paise,
+        maxGuests: { type: Number, default: 0, min: 0 },
+      },
+      // Weekly and monthly: any number of nights the guest picks on the calendar, at their own nightly rate
+      weekly: {
+        enabled: { type: Boolean, default: false },
+        minNights: { type: Number, default: 7, min: 1, max: 365 },
+        maxNights: { type: Number, default: 365, min: 1, max: 365 },
+        pricePerNightPaise: paise,
+      },
+      monthly: {
+        enabled: { type: Boolean, default: false },
+        minNights: { type: Number, default: 28, min: 1, max: 365 },
+        maxNights: { type: Number, default: 365, min: 1, max: 365 },
+        pricePerNightPaise: paise,
+      },
+      // Older villas may still hold these two; guests can no longer book them
       dayUse: {
         enabled: { type: Boolean, default: false },
         packages: {

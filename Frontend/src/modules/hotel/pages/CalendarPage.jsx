@@ -4,7 +4,7 @@ import { ArrowRight, CalendarCheck, ChevronLeft, ChevronRight, Lock, Plus, Trash
 import { toast } from 'sonner'
 import { errorMessage } from '@/services/api/axios.js'
 import { useAsync } from '../components/useAsync.js'
-import { Btn, Card, Empty, ErrorBox, Field, Input, Modal, PageTitle, Pill, Select, Spinner, Tabs } from '../components/ui.jsx'
+import { Btn, Card, Empty, ErrorBox, Field, Input, Modal, PageTitle, Pill, Select, Spinner, Tabs, TimeInput } from '../components/ui.jsx'
 import { ownerAPI } from '../services/ownerAPI.js'
 import {
   addDays, addMonths, dayLabel, formatPaise, fullDate, localDateOf, localTimeOf, monthCells, monthLabel, monthStart, timeOnly, todayStr, toPaise, weekdayOf,
@@ -149,8 +149,8 @@ function BlockModal({ villaId, defaultDate, open, onClose, onDone }) {
         ) : (
           <div className="grid grid-cols-3 gap-3">
             <Field label="Date"><Input type="date" value={f.date} min={todayStr()} onChange={set('date')} required /></Field>
-            <Field label="From"><Input type="time" value={f.startTime} onChange={set('startTime')} required /></Field>
-            <Field label="To"><Input type="time" value={f.endTime} onChange={set('endTime')} required /></Field>
+            <Field label="From"><TimeInput value={f.startTime} onChange={set('startTime')} required /></Field>
+            <Field label="To"><TimeInput value={f.endTime} onChange={set('endTime')} required /></Field>
           </div>
         )}
         <Field label="Reason (only you see this)"><Input value={f.reason} onChange={set('reason')} maxLength={200} placeholder="Maintenance, family visit…" /></Field>
@@ -247,7 +247,7 @@ export default function CalendarPage() {
 
   return (
     <>
-      <PageTitle title="Calendar & pricing" subtitle="One calendar per villa. Night stays, day use and hourly slots all share it."
+      <PageTitle title="Calendar & pricing" subtitle="One calendar per villa. Day, night, full day & night, weekly and monthly bookings all share it."
         actions={(
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <Select value={villaId} onChange={(e) => setParams({ villa: e.target.value })} aria-label="Villa" className="min-w-0 flex-1 sm:min-w-48 sm:flex-none">{(villas.data || []).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</Select>

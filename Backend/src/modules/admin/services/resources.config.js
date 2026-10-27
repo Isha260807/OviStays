@@ -82,7 +82,10 @@ export const resources = {
     model: Location,
     searchFields: ['refId', 'city', 'state'],
     createFields: ['city', 'state', 'image'],
-    updateFields: ['city', 'state', 'image', 'status'],
+    // The city name stays fixed: villas point to their city by name
+    updateFields: ['state', 'image', 'status'],
+    // Villas keep a copy of the state, so a corrected state reaches them too
+    afterChange: (doc) => Hotel.updateMany({ city: doc.city }, { state: doc.state }),
     optionLabel: (d) => d.city,
     optionValue: (d) => d.city,
     decorate: async (docs) => {

@@ -91,6 +91,12 @@ export const listConfigs = {
       { name: "state", label: "State", required: true },
       { name: "image", label: "Location image (shown on the app home page)", type: "image", preset: "misc", full: true },
     ],
+    // The city name cannot change: villas are linked to their city by name
+    editTitleKey: "city",
+    editFields: [
+      { name: "state", label: "State", required: true },
+      { name: "image", label: "Location image (shown on the app home page)", type: "image", preset: "misc", full: true },
+    ],
   },
 
   customers: {

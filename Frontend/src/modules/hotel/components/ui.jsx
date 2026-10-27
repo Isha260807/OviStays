@@ -40,6 +40,58 @@ export const Input = (props) => <input {...props} className={cn(inputCls, props.
 export const Select = ({ children, ...props }) => <select {...props} className={cn(inputCls, props.className)}>{children}</select>
 export const Textarea = (props) => <textarea rows={3} {...props} className={cn(inputCls, props.className)} />
 
+// A time field that always shows hour, minute and AM/PM (the browser's own time picker follows the device and may show 24 hours).
+// value and onChange use "HH:MM" in 24-hour form; onChange gets { target: { value } } so it can replace a plain <input>.
+// min and max ("HH:MM", same day) limit what can be picked: only the hours, minutes and AM/PM inside that window are listed.
+const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
+const fromMin = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+const STEP = 5
+
+export function TimeInput({ value, onChange, className, disabled, min = '00:00', max = '23:59' }) {
+  const has = /^\d{2}:\d{2}$/.test(value || '')
+  const now = has ? toMin(value) : null
+  const lo = toMin(min)
+  const hi = toMin(max)
+  // every time that may be picked, plus the saved one even if it falls outside the window
+  const times = []
+  for (let m = Math.ceil(lo / STEP) * STEP; m <= hi; m += STEP) times.push(m)
+  if (now !== null && !times.includes(now)) times.push(now)
+  times.sort((a, b) => a - b)
+
+  const periodOf = (m) => (m < 720 ? 'AM' : 'PM')
+  const hourOf = (m) => Math.floor(m / 60) % 12 || 12
+  const period = now === null ? periodOf(times[0] ?? 0) : periodOf(now)
+  const hour = now === null ? '' : hourOf(now)
+  const periods = ['AM', 'PM'].filter((p) => times.some((m) => periodOf(m) === p))
+  const hours = [...new Set(times.filter((m) => periodOf(m) === period).map(hourOf))]
+  const minutes = [...new Set(times.filter((m) => periodOf(m) === period && (hour === '' || hourOf(m) === hour)).map((m) => m % 60))]
+
+  // the nearest allowed time to what was chosen, so a change in one box never leaves an impossible time behind
+  const emit = (p, h, mi) => {
+    const wanted = ((Number(h) % 12) + (p === 'PM' ? 12 : 0)) * 60 + Number(mi)
+    const best = times.reduce((a, b) => (Math.abs(b - wanted) < Math.abs(a - wanted) ? b : a), times[0])
+    onChange({ target: { value: fromMin(best) } })
+  }
+  const cls = cn(inputCls, 'px-2')
+  return (
+    <div className={cn('flex items-center gap-1.5', className)}>
+      <select aria-label="Hour" disabled={disabled} value={hour} onChange={(e) => emit(period, e.target.value, now === null ? 0 : now % 60)} className={cls}>
+        {hour === '' && <option value="">--</option>}
+        {hours.map((h) => <option key={h} value={h}>{h}</option>)}
+      </select>
+      <span className="text-slate-400">:</span>
+      <select aria-label="Minute" disabled={disabled} value={now === null ? '' : now % 60} onChange={(e) => emit(period, hour === '' ? hours[0] : hour, e.target.value)} className={cls}>
+        {now === null && <option value="">--</option>}
+        {minutes.map((mi) => <option key={mi} value={mi}>{String(mi).padStart(2, '0')}</option>)}
+      </select>
+      <select aria-label="AM or PM" disabled={disabled} value={period} onChange={(e) => emit(e.target.value, hour === '' ? 12 : hour, now === null ? 0 : now % 60)} className={cls}>
+        {periods.map((p) => <option key={p} value={p}>{p}</option>)}
+      </select>
+    </div>
+  )
+}
+
+
 export function Card({ title, action, children, className }) {
   return (
     <section className={cn('rounded-xl border border-slate-200 bg-white', className)}>

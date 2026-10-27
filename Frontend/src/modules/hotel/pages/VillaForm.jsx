@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ImagePlus, Loader2, Plus, Trash2, X } from 'lucide-react'
+import { ImagePlus, Loader2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/services/api/axios.js'
 import { assetUrl } from '@/services/api/config.js'
 import { uploadImage, IMAGE_TYPES, MAX_IMAGE_MB } from '@/services/api/uploads.js'
 import { useAsync } from '../components/useAsync.js'
-import { Btn, Card, ErrorBox, Field, Input, PageTitle, Pill, Select, Spinner, Tabs, Textarea } from '../components/ui.jsx'
+import { Btn, Card, ErrorBox, Field, Input, PageTitle, Pill, Select, Spinner, Tabs, Textarea, TimeInput } from '../components/ui.jsx'
 import { ownerAPI } from '../services/ownerAPI.js'
 import { toPaise, toRupees } from '@/shared/utils/booking.js'
 
@@ -20,6 +20,15 @@ const SECTIONS = [
   { key: 'rules', label: 'Rules' },
 ]
 
+// Day bookings are for daytime only, so their times stay between these two
+const DAY_FROM = '06:00'
+const DAY_TO = '18:00'
+// Night stays check in from noon onwards and check out the next morning
+const NIGHT_IN_FROM = '12:00'
+const NIGHT_OUT_FROM = '05:00'
+const NIGHT_OUT_TO = '12:00'
+const laterBy5 = (t) => { const m = Math.min(Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + 5, 18 * 60); return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }
+
 const EMPTY = {
   name: '', description: '', propertyType: 'Private Villa', address: '', locality: '', city: '', state: '', country: 'India', pincode: '', mapUrl: '', geo: null,
   coverImage: '', gallery: [], bedrooms: 1, beds: 1, bathrooms: 1, maxGuests: 4, amenities: [], houseRules: [],
@@ -27,8 +36,10 @@ const EMPTY = {
   pricing: { basePricePaise: 0, weekendPricePaise: 0, weeklyDiscountPct: 0, monthlyDiscountPct: 0, cleaningFeePaise: 0 },
   bookingModes: {
     night: { enabled: true, minNights: 1, maxNights: 30 },
-    dayUse: { enabled: false, packages: [] },
-    hourly: { enabled: false, openTime: '09:00', closeTime: '21:00', startStepMinutes: 60, pricePerHourPaise: 0, minHours: 1, maxHours: 8, durations: [] },
+    day: { enabled: false, startTime: '10:00', endTime: '18:00', pricePaise: 0, maxGuests: 0 },
+    fullDayNight: { enabled: false, startTime: '10:00', endTime: '10:00', pricePaise: 0, maxGuests: 0 },
+    weekly: { enabled: false, minNights: 7, maxNights: 365, pricePerNightPaise: 0 },
+    monthly: { enabled: false, minNights: 28, maxNights: 365, pricePerNightPaise: 0 },
   },
 }
 const PHOTO_CATEGORIES = ['Exterior', 'Living', 'Bedroom', 'Bathroom', 'Kitchen', 'Pool', 'Garden', 'Other']
@@ -100,13 +111,8 @@ export default function VillaForm() {
 
   useEffect(() => {
     if (!villa) return
-    const next = { ...EMPTY, ...villa }
-    // A villa saved with the old "fixed slot length" gets that slot's price as its hourly rate
-    const h = next.bookingModes.hourly
-    const old = h.durations?.[0]
-    if (!h.pricePerHourPaise && old) next.bookingModes = { ...next.bookingModes, hourly: { ...h, pricePerHourPaise: Math.round(old.pricePaise / (old.minutes / 60)), minHours: Math.max(1, Math.ceil(old.minutes / 60)) } }
-    setForm(next)
-    setDirty(Boolean(!h.pricePerHourPaise && old))
+    // Booking types a villa has not set up yet fall back to the defaults
+    setForm({ ...EMPTY, ...villa, bookingModes: { ...EMPTY.bookingModes, ...villa.bookingModes } })
   }, [villa])
   useEffect(() => {
     if (!dirty) return undefined
@@ -151,6 +157,7 @@ export default function VillaForm() {
   const m = form.bookingModes
   const sec = (k) => (tab === k ? 'space-y-5' : 'hidden')
   const locked = form.listingStatus === 'Suspended'
+  const offer = (mode, text) => <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m[mode].enabled} onChange={(e) => editMode(mode, { enabled: e.target.checked })} /> {text}</label>
   const toggleAmenity = (aid) => edit({ amenities: form.amenities.includes(aid) ? form.amenities.filter((a) => a !== aid) : [...form.amenities, aid] })
   const addRule = () => { if (rule.trim()) { edit({ houseRules: [...form.houseRules, rule.trim()] }); setRule('') } }
   const lat = form.geo?.lat ?? ''
@@ -240,10 +247,21 @@ export default function VillaForm() {
             </Field>
             <Field label="Bookings open up to (days ahead)"><Input type="number" min="1" max="730" value={form.maxAdvanceDays} onChange={num('maxAdvanceDays')} /></Field>
           </div>
-          <p className="mt-4 text-xs text-slate-500">All three types share one calendar: a night stay, a day-use package and an hourly slot can never overlap.</p>
+          <p className="mt-4 text-xs text-slate-500">All booking types share one calendar: a day, a night, a full day & night, a weekly and a monthly stay can never overlap.</p>
         </Card>
 
-        <Card title="Night stay" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.night.enabled} onChange={(e) => editMode('night', { enabled: e.target.checked })} /> Offer night stays</label>}>
+        <Card title="Day" action={offer('day', 'Offer day bookings')}>
+          {m.day.enabled && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="From" hint="The whole villa for the daytime (6 AM to 6 PM) of one date."><TimeInput min={DAY_FROM} max="17:55" value={m.day.startTime} onChange={(e) => editMode('day', { startTime: e.target.value, ...(m.day.endTime <= e.target.value ? { endTime: laterBy5(e.target.value) } : {}) })} /></Field>
+              <Field label="To"><TimeInput min={laterBy5(m.day.startTime)} max={DAY_TO} value={m.day.endTime} onChange={(e) => editMode('day', { endTime: e.target.value })} /></Field>
+              <Field label="Price (₹)"><Money value={m.day.pricePaise} onChange={(v) => editMode('day', { pricePaise: v })} /></Field>
+              <Field label="Max guests" hint="0 = the villa's maximum guests."><Input type="number" min="0" value={m.day.maxGuests} onChange={(e) => editMode('day', { maxGuests: Number(e.target.value) })} /></Field>
+            </div>
+          )}
+        </Card>
+
+        <Card title="Night" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.night.enabled} onChange={(e) => editMode('night', { enabled: e.target.checked })} /> Offer night stays</label>}>
           {m.night.enabled && <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Price per night (₹)"><Money value={form.pricing.basePricePaise} onChange={(v) => editIn('pricing', { basePricePaise: v })} /></Field>
             <Field label="Fri & Sat night price (₹)" hint="Leave empty to use the normal price."><Money value={form.pricing.weekendPricePaise} onChange={(v) => editIn('pricing', { weekendPricePaise: v })} /></Field>
@@ -253,44 +271,42 @@ export default function VillaForm() {
             <span />
             <Field label="Weekly stay discount (%)" hint="7 nights or more"><Input type="number" min="0" max="90" value={form.pricing.weeklyDiscountPct} onChange={(e) => editIn('pricing', { weeklyDiscountPct: Number(e.target.value) })} /></Field>
             <Field label="Monthly stay discount (%)" hint="28 nights or more"><Input type="number" min="0" max="90" value={form.pricing.monthlyDiscountPct} onChange={(e) => editIn('pricing', { monthlyDiscountPct: Number(e.target.value) })} /></Field>
-            <Field label="Check-in time"><Input type="time" value={form.checkInTime} onChange={txt('checkInTime')} /></Field>
-            <Field label="Check-out time"><Input type="time" value={form.checkOutTime} onChange={txt('checkOutTime')} /></Field>
+            <Field label="Check-in time" hint="From 12 PM to 11:55 PM."><TimeInput min={NIGHT_IN_FROM} max="23:55" value={form.checkInTime} onChange={txt('checkInTime')} /></Field>
+            <Field label="Check-out time" hint="Next morning, 5 AM to 12 PM."><TimeInput min={NIGHT_OUT_FROM} max={NIGHT_OUT_TO} value={form.checkOutTime} onChange={txt('checkOutTime')} /></Field>
             <label className="flex items-start gap-2 text-sm sm:col-span-2"><input type="checkbox" className="mt-1" checked={form.allowSameDay} onChange={(e) => edit({ allowSameDay: e.target.checked })} /><span><b>Allow same-day bookings</b><span className="block text-xs text-slate-500">If a guest books tonight after your check-in time has passed, their stay starts from the moment they book and still ends at your normal check-out time. No extra time is given. Same-day arrival must be before midnight.</span></span></label>
           </div>}
         </Card>
 
-        <Card title="Day use" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.dayUse.enabled} onChange={(e) => editMode('dayUse', { enabled: e.target.checked })} /> Offer day-use packages</label>}>
-          {m.dayUse.enabled && <div className="space-y-3">
-            {m.dayUse.packages.map((p, i) => (
-              <div key={p.id || i} className="grid items-end gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-6">
-                <Field label="Package name" className="sm:col-span-2"><Input value={p.name} maxLength={40} onChange={(e) => editMode('dayUse', { packages: m.dayUse.packages.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} /></Field>
-                <Field label="From"><Input type="time" value={p.startTime} onChange={(e) => editMode('dayUse', { packages: m.dayUse.packages.map((x, j) => (j === i ? { ...x, startTime: e.target.value } : x)) })} /></Field>
-                <Field label="To"><Input type="time" value={p.endTime} onChange={(e) => editMode('dayUse', { packages: m.dayUse.packages.map((x, j) => (j === i ? { ...x, endTime: e.target.value } : x)) })} /></Field>
-                <Field label="Price (₹)"><Money value={p.pricePaise} onChange={(v) => editMode('dayUse', { packages: m.dayUse.packages.map((x, j) => (j === i ? { ...x, pricePaise: v } : x)) })} /></Field>
-                <div className="flex items-end gap-2">
-                  <Field label="Guests"><Input type="number" min="0" value={p.maxGuests} onChange={(e) => editMode('dayUse', { packages: m.dayUse.packages.map((x, j) => (j === i ? { ...x, maxGuests: Number(e.target.value) } : x)) })} /></Field>
-                  <button type="button" aria-label="Remove package" onClick={() => editMode('dayUse', { packages: m.dayUse.packages.filter((_, j) => j !== i) })} className="mb-2 text-red-600 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-            ))}
-            <Btn variant="outline" size="sm" onClick={() => editMode('dayUse', { packages: [...m.dayUse.packages, { name: 'Day package', startTime: '10:00', endTime: '18:00', pricePaise: 0, maxGuests: 0 }] })}><Plus className="w-4 h-4" /> Add package</Btn>
-          </div>}
-        </Card>
-
-        <Card title="Hourly slots" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.hourly.enabled} onChange={(e) => editMode('hourly', { enabled: e.target.checked })} /> Offer hourly slots</label>}>
-          {m.hourly.enabled && <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Opens at"><Input type="time" value={m.hourly.openTime} onChange={(e) => editMode('hourly', { openTime: e.target.value })} /></Field>
-              <Field label="Closes at"><Input type="time" value={m.hourly.closeTime} onChange={(e) => editMode('hourly', { closeTime: e.target.value })} /></Field>
-              <Field label="Slots can start every (minutes)"><Select value={m.hourly.startStepMinutes} onChange={(e) => editMode('hourly', { startStepMinutes: Number(e.target.value) })}>{[15, 30, 60, 120].map((n) => <option key={n} value={n}>{n}</option>)}</Select></Field>
-              <Field label="Price per hour (₹)" hint="The guest picks how many hours; the price is hours × this rate."><Money value={m.hourly.pricePerHourPaise} onChange={(v) => editMode('hourly', { pricePerHourPaise: v })} /></Field>
-              <Field label="Minimum hours"><Input type="number" min="1" max="24" value={m.hourly.minHours} onChange={(e) => editMode('hourly', { minHours: Number(e.target.value) })} /></Field>
-              <Field label="Maximum hours"><Input type="number" min="1" max="24" value={m.hourly.maxHours} onChange={(e) => editMode('hourly', { maxHours: Number(e.target.value) })} /></Field>
+        <Card title="Full day & night" action={offer('fullDayNight', 'Offer full day & night')}>
+          {m.fullDayNight.enabled && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Check-in time" hint="On the date the guest picks."><TimeInput value={m.fullDayNight.startTime} onChange={(e) => editMode('fullDayNight', { startTime: e.target.value })} /></Field>
+              <Field label="Check-out time" hint="The next day."><TimeInput value={m.fullDayNight.endTime} onChange={(e) => editMode('fullDayNight', { endTime: e.target.value })} /></Field>
+              <Field label="Price (₹)" hint="One price for the whole villa, day and night."><Money value={m.fullDayNight.pricePaise} onChange={(v) => editMode('fullDayNight', { pricePaise: v })} /></Field>
+              <Field label="Max guests" hint="0 = the villa's maximum guests."><Input type="number" min="0" value={m.fullDayNight.maxGuests} onChange={(e) => editMode('fullDayNight', { maxGuests: Number(e.target.value) })} /></Field>
             </div>
-            {m.hourly.pricePerHourPaise > 0 && <p className="rounded-lg bg-sky-50 p-3 text-sm text-sky-800">Example: {m.hourly.minHours} hour = ₹{(m.hourly.pricePerHourPaise * m.hourly.minHours) / 100}, {Math.min(3, m.hourly.maxHours)} hours = ₹{(m.hourly.pricePerHourPaise * Math.min(3, m.hourly.maxHours)) / 100}, {m.hourly.maxHours} hours = ₹{(m.hourly.pricePerHourPaise * m.hourly.maxHours) / 100}. Bookings must finish by {m.hourly.closeTime}.</p>}
-          </div>}
+          )}
         </Card>
 
+        <Card title="Weekly" action={offer('weekly', 'Offer weekly stays')}>
+          {m.weekly.enabled && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Price per night (₹)" hint="Charged for every night of a weekly stay."><Money value={m.weekly.pricePerNightPaise} onChange={(v) => editMode('weekly', { pricePerNightPaise: v })} /></Field>
+              <Field label="Minimum nights" hint="Guests pick any dates from the calendar, at least this many nights."><Input type="number" min="1" value={m.weekly.minNights} onChange={(e) => editMode('weekly', { minNights: Number(e.target.value) })} /></Field>
+              <Field label="Maximum nights"><Input type="number" min="1" value={m.weekly.maxNights} onChange={(e) => editMode('weekly', { maxNights: Number(e.target.value) })} /></Field>
+            </div>
+          )}
+        </Card>
+
+        <Card title="Monthly" action={offer('monthly', 'Offer monthly stays')}>
+          {m.monthly.enabled && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Price per night (₹)" hint="Charged for every night of a monthly stay."><Money value={m.monthly.pricePerNightPaise} onChange={(v) => editMode('monthly', { pricePerNightPaise: v })} /></Field>
+              <Field label="Minimum nights" hint="Guests pick any dates from the calendar, at least this many nights."><Input type="number" min="1" value={m.monthly.minNights} onChange={(e) => editMode('monthly', { minNights: Number(e.target.value) })} /></Field>
+              <Field label="Maximum nights"><Input type="number" min="1" value={m.monthly.maxNights} onChange={(e) => editMode('monthly', { maxNights: Number(e.target.value) })} /></Field>
+            </div>
+          )}
+        </Card>
         </div>
 
         <div className={sec('rules')}>

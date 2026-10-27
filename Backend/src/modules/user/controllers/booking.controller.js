@@ -53,8 +53,10 @@ export function bookingConfig(villa) {
     maxGuests: villa.maxGuests || 0,
     cleaningFeePaise: villa.pricing?.cleaningFeePaise || 0,
     night: { enabled: Boolean(m.night?.enabled), minNights: m.night?.minNights || 1, maxNights: m.night?.maxNights || 30, basePricePaise: villa.pricing?.basePricePaise || Math.round((villa.startingPrice || 0) * 100), weekendPricePaise: villa.pricing?.weekendPricePaise || 0, weeklyDiscountPct: villa.pricing?.weeklyDiscountPct || 0, monthlyDiscountPct: villa.pricing?.monthlyDiscountPct || 0 },
-    dayUse: { enabled: Boolean(m.dayUse?.enabled), packages: (m.dayUse?.packages || []).map((p) => ({ id: String(p._id), name: p.name, startTime: p.startTime, endTime: p.endTime, pricePaise: p.pricePaise, maxGuests: p.maxGuests })) },
-    hourly: { enabled: Boolean(m.hourly?.enabled), openTime: m.hourly?.openTime || '', closeTime: m.hourly?.closeTime || '', startStepMinutes: m.hourly?.startStepMinutes || 60, pricePerHourPaise: m.hourly?.pricePerHourPaise || 0, minHours: m.hourly?.minHours || 1, maxHours: m.hourly?.maxHours || 12, durations: (m.hourly?.durations || []).map((d) => ({ minutes: d.minutes, pricePaise: d.pricePaise })) },
+    day: { enabled: Boolean(m.day?.enabled), startTime: m.day?.startTime || '', endTime: m.day?.endTime || '', pricePaise: m.day?.pricePaise || 0, maxGuests: m.day?.maxGuests || 0 },
+    fullDayNight: { enabled: Boolean(m.fullDayNight?.enabled), startTime: m.fullDayNight?.startTime || '', endTime: m.fullDayNight?.endTime || '', pricePaise: m.fullDayNight?.pricePaise || 0, maxGuests: m.fullDayNight?.maxGuests || 0 },
+    weekly: { enabled: Boolean(m.weekly?.enabled), minNights: m.weekly?.minNights || 7, maxNights: m.weekly?.maxNights || 365, pricePerNightPaise: m.weekly?.pricePerNightPaise || 0 },
+    monthly: { enabled: Boolean(m.monthly?.enabled), minNights: m.monthly?.minNights || 28, maxNights: m.monthly?.maxNights || 365, pricePerNightPaise: m.monthly?.pricePerNightPaise || 0 },
   }
 }
 
@@ -74,7 +76,7 @@ export async function villaAvailability(req, res) {
   res.json({ success: true, data: { from, to, nights: await nightAvailability(villa.toObject(), rules, from, to) } })
 }
 
-// GET /user/villas/:id/slots?date=YYYY-MM-DD   (day-use packages and hourly slots)
+// GET /user/villas/:id/slots?date=YYYY-MM-DD   (whether the day and the full day & night bookings are free)
 export async function villaSlots(req, res) {
   const villa = await publicVilla(req.params.id)
   if (!isDateStr(req.query.date)) throw badRequest('Choose a date')

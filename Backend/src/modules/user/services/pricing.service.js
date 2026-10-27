@@ -6,7 +6,10 @@ import { DEFAULT_TZ, addDays, diffDays, eachDate, fromMinutes, isDateStr, isTime
 // the villa, its price rules and the settings are passed in, so the result is the same everywhere
 // (quote, hold, payment order) and easy to test. The client never supplies a price.
 
-const MODES = ['night', 'dayUse', 'hourly']
+// What a guest can book. night, weekly and monthly are date ranges (a number of nights picked on the calendar);
+// day and fullDayNight are one date with the times the owner set.
+const MODES = ['day', 'night', 'fullDayNight', 'weekly', 'monthly']
+const RANGE_MODES = ['night', 'weekly', 'monthly']
 export const isMode = (m) => MODES.includes(m)
 
 const enabled = (villa, mode) => Boolean(villa.bookingModes?.[mode]?.enabled)
@@ -15,6 +18,7 @@ const enabled = (villa, mode) => Boolean(villa.bookingModes?.[mode]?.enabled)
 function ruleFor(rules, date) {
   return rules.find((r) => r.startDate <= date && date <= r.endDate) || null
 }
+const nightsLabel = (rate, n) => `${formatInr(rate)} x ${n} night${n > 1 ? 's' : ''}`
 const adjust = (paise, pct) => (pct ? Math.max(0, paise + percentOf(paise, pct)) : paise)
 
 export function nightlyRate(villa, rules, date) {
@@ -51,16 +55,16 @@ export function nightStart(villa, date, now = new Date()) {
 
 // The start / end instants of a selection, or a 400 when the selection does not make sense for this villa
 export function resolveSelection(villa, mode, sel = {}, now = new Date()) {
-  if (!isMode(mode)) throw badRequest('Choose a booking type: night stay, day use or hourly')
+  if (!isMode(mode)) throw badRequest('Choose a booking type: day, night, full day & night, weekly or monthly')
   if (!enabled(villa, mode)) throw badRequest('This villa does not offer that booking type')
   const tz = villa.timezone || DEFAULT_TZ
 
-  if (mode === 'night') {
+  if (RANGE_MODES.includes(mode)) {
     const { checkIn, checkOut } = sel
     if (!isDateStr(checkIn) || !isDateStr(checkOut)) throw badRequest('Choose your check-in and check-out dates')
     const nights = diffDays(checkIn, checkOut)
     if (nights < 1) throw badRequest('Check-out must be after check-in')
-    const { minNights = 1, maxNights = 365 } = villa.bookingModes.night
+    const { minNights = 1, maxNights = 365 } = villa.bookingModes[mode]
     if (nights < minNights) throw badRequest(`Minimum stay is ${minNights} night${minNights > 1 ? 's' : ''}`)
     if (nights > maxNights) throw badRequest(`Maximum stay is ${maxNights} nights`)
     const begin = nightStart(villa, checkIn, now)
@@ -90,48 +94,15 @@ export function resolveSelection(villa, mode, sel = {}, now = new Date()) {
     }
   }
 
-  if (mode === 'dayUse') {
-    const { date, packageId } = sel
-    if (!isDateStr(date)) throw badRequest('Choose a date')
-    const pkg = (villa.bookingModes.dayUse.packages || []).find((p) => String(p._id) === String(packageId))
-    if (!pkg) throw badRequest('Choose a day-use package')
-    if (toMinutes(pkg.endTime) <= toMinutes(pkg.startTime)) throw badRequest('This package has invalid timings')
-    return {
-      mode, nights: 0, tz, pkg,
-      startAt: zonedToUtc(date, pkg.startTime, tz),
-      endAt: zonedToUtc(date, pkg.endTime, tz),
-      slot: { date, packageId: pkg._id, packageName: pkg.name },
-    }
-  }
-
-  // hourly
-  const { date, startTime } = sel
-  const minutes = Number(sel.durationMinutes)
+  // day and fullDayNight: one date, times set by the owner
+  const { date } = sel
   if (!isDateStr(date)) throw badRequest('Choose a date')
-  if (!isTimeStr(startTime)) throw badRequest('Choose a start time')
-  const cfg = villa.bookingModes.hourly
-  // Pay-per-hour villas take any whole number of hours; older villas offer fixed slot lengths
-  const perHour = cfg.pricePerHourPaise || 0
-  let option
-  if (perHour) {
-    const hours = minutes / 60
-    if (!Number.isInteger(hours) || hours < (cfg.minHours || 1) || hours > (cfg.maxHours || 12)) throw badRequest(`Choose between ${cfg.minHours || 1} and ${cfg.maxHours || 12} hours`)
-    option = { minutes, pricePaise: perHour * hours }
-  } else {
-    option = (cfg.durations || []).find((d) => d.minutes === minutes)
+  const cfg = villa.bookingModes[mode]
+  if (mode === 'day') {
+    if (toMinutes(cfg.endTime) <= toMinutes(cfg.startTime)) throw badRequest('This villa has invalid day timings')
+    return { mode, nights: 0, tz, startAt: zonedToUtc(date, cfg.startTime, tz), endAt: zonedToUtc(date, cfg.endTime, tz), slot: { date } }
   }
-  if (!option) throw badRequest('Choose a slot length')
-  const open = toMinutes(cfg.openTime)
-  const close = toMinutes(cfg.closeTime)
-  const start = toMinutes(startTime)
-  if (start < open || start + minutes > close) throw badRequest(`Slots run between ${cfg.openTime} and ${cfg.closeTime}`)
-  if ((start - open) % (cfg.startStepMinutes || 60) !== 0) throw badRequest('Choose one of the listed start times')
-  return {
-    mode, nights: 0, tz, option,
-    startAt: zonedToUtc(date, startTime, tz),
-    endAt: new Date(zonedToUtc(date, startTime, tz).getTime() + minutes * 60 * 1000),
-    slot: { date, durationMinutes: minutes },
-  }
+  return { mode, nights: 1, tz, startAt: zonedToUtc(date, cfg.startTime, tz), endAt: zonedToUtc(addDays(date, 1), cfg.endTime, tz), slot: { date } }
 }
 
 // How close to now a start may be, and how far ahead
@@ -155,10 +126,10 @@ export function computeQuote({ villa, mode, selection, guests, rules = [], setti
   const sel = resolveSelection(villa, mode, selection, now)
   assertBookable(villa, sel.startAt, now)
 
-  const maxGuests = mode === 'dayUse' ? sel.pkg.maxGuests || villa.maxGuests : villa.maxGuests
+  const maxGuests = (mode === 'day' || mode === 'fullDayNight' ? villa.bookingModes[mode].maxGuests : 0) || villa.maxGuests
   const count = Number(guests)
   if (!Number.isInteger(count) || count < 1) throw badRequest('Enter the number of guests')
-  if (maxGuests && count > maxGuests) throw badRequest(`This ${mode === 'dayUse' ? 'package' : 'villa'} allows up to ${maxGuests} guests`)
+  if (maxGuests && count > maxGuests) throw badRequest(`This villa allows up to ${maxGuests} guests`)
 
   const lines = []
   let roomPaise = 0
@@ -171,19 +142,27 @@ export function computeQuote({ villa, mode, selection, guests, rules = [], setti
     roomPaise = rates.reduce((a, b) => a + b, 0)
     const groups = new Map()
     for (const r of rates) groups.set(r, (groups.get(r) || 0) + 1)
-    for (const [rate, n] of groups) lines.push({ label: `${formatInr(rate)} x ${n} night${n > 1 ? 's' : ''}`, amountPaise: rate * n })
+    for (const [rate, n] of groups) lines.push({ label: nightsLabel(rate, n), amountPaise: rate * n })
     const p = villa.pricing || {}
     const pct = sel.nights >= 28 ? p.monthlyDiscountPct : sel.nights >= 7 ? p.weeklyDiscountPct : 0
     if (pct) {
       discountPaise = percentOf(roomPaise, pct)
       lines.push({ label: `${sel.nights >= 28 ? 'Monthly' : 'Weekly'} stay discount (${pct}%)`, amountPaise: -discountPaise })
     }
+  } else if (mode === 'weekly' || mode === 'monthly') {
+    // The owner's own nightly rate for long stays; a seasonal percentage on a date still applies
+    const base = villa.bookingModes[mode].pricePerNightPaise
+    if (!base) throw new HttpError(409, 'This villa has no price set for this booking type')
+    const rates = eachDate(selection.checkIn, selection.checkOut).map((d) => adjust(base, ruleFor(rules, d)?.adjustPct))
+    roomPaise = rates.reduce((a, b) => a + b, 0)
+    const groups = new Map()
+    for (const r of rates) groups.set(r, (groups.get(r) || 0) + 1)
+    for (const [rate, n] of groups) lines.push({ label: nightsLabel(rate, n), amountPaise: rate * n })
   } else {
-    const price = mode === 'dayUse' ? sel.pkg.pricePaise : sel.option.pricePaise
-    if (!price) throw new HttpError(409, 'This option has no price set')
-    const rule = ruleFor(rules, sel.slot.date)
-    roomPaise = adjust(price, rule?.adjustPct)
-    lines.push({ label: mode === 'dayUse' ? sel.pkg.name : `${sel.option.minutes / 60} hour slot, ${selection.startTime}-${fromMinutes(toMinutes(selection.startTime) + sel.option.minutes)}`, amountPaise: roomPaise })
+    const price = villa.bookingModes[mode].pricePaise
+    if (!price) throw new HttpError(409, 'This villa has no price set for this booking type')
+    roomPaise = adjust(price, ruleFor(rules, sel.slot.date)?.adjustPct)
+    lines.push({ label: mode === 'day' ? 'Day (whole villa)' : 'Full day & night (whole villa)', amountPaise: roomPaise })
   }
 
   let couponPaise = 0
@@ -227,8 +206,10 @@ export function startingPricePaise(villa) {
   const p = villa.pricing || {}
   const prices = []
   if (m.night?.enabled && p.basePricePaise) prices.push(p.basePricePaise)
-  if (m.dayUse?.enabled) prices.push(...(m.dayUse.packages || []).map((x) => x.pricePaise).filter(Boolean))
-  if (m.hourly?.enabled) prices.push(...(m.hourly.durations || []).map((x) => x.pricePaise).filter(Boolean), ...(m.hourly.pricePerHourPaise ? [m.hourly.pricePerHourPaise] : []))
+  if (m.day?.enabled && m.day.pricePaise) prices.push(m.day.pricePaise)
+  if (m.fullDayNight?.enabled && m.fullDayNight.pricePaise) prices.push(m.fullDayNight.pricePaise)
+  if (m.weekly?.enabled && m.weekly.pricePerNightPaise) prices.push(m.weekly.pricePerNightPaise)
+  if (m.monthly?.enabled && m.monthly.pricePerNightPaise) prices.push(m.monthly.pricePerNightPaise)
   return prices.length ? Math.min(...prices) : 0
 }
 

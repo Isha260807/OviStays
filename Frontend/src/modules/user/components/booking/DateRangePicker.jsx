@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '@/services/api/axios.js'
 import { C } from '../home/homeUi.jsx'
-import { addDays, addMonths, dayLabel, diffDays, localTimeOf, monthCells, monthLabel, monthStart, todayStr } from '@/shared/utils/booking.js'
+import { MODE_LABEL, addDays, addMonths, dayLabel, diffDays, localTimeOf, monthCells, monthLabel, monthStart, todayStr } from '@/shared/utils/booking.js'
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
@@ -21,7 +21,7 @@ const short = (paise) => {
 
 // Pick check-in and check-out on a month calendar. Nights that are taken, blocked or too soon are greyed out,
 // and a range can only be completed across free nights. The server checks everything again when booking.
-export default function DateRangePicker({ villaId, checkIn, checkOut, onChange, minNights = 1, maxNights = 365, checkInTime = '12:00', checkOutTime = '11:00', arrival = '', departure = '', onTimes, otherModes = [], onSwitchMode }) {
+export default function DateRangePicker({ villaId, checkIn, checkOut, onChange, minNights = 1, maxNights = 365, checkInTime = '12:00', checkOutTime = '11:00', arrival = '', departure = '', onTimes, otherModes = [], onSwitchMode, ratePaise = 0 }) {
   const [month, setMonth] = useState(() => monthStart(checkIn || todayStr()))
   const [nights, setNights] = useState({}) // date -> { available, pricePaise }
   const [loading, setLoading] = useState(false)
@@ -90,7 +90,7 @@ export default function DateRangePicker({ villaId, checkIn, checkOut, onChange, 
               className={`h-12 flex flex-col items-center justify-center text-sm transition-colors ${start || end ? 'rounded-xl text-white font-semibold' : inside ? 'font-medium' : ok ? 'rounded-xl hover:bg-[#EEF9FF] cursor-pointer' : 'text-gray-300 line-through'}`}
               style={start || end ? { background: C.primaryDark } : inside ? { background: C.peach } : undefined}>
               <span>{Number(d.slice(8))}</span>
-              {nights[d]?.available && !(start || end) && <span className="text-[9px] leading-none" style={{ color: C.muted }}>{short(nights[d].pricePaise)}</span>}
+              {nights[d]?.available && !(start || end) && <span className="text-[9px] leading-none" style={{ color: C.muted }}>{short(ratePaise || nights[d].pricePaise)}</span>}
             </button>
           )
         })}
@@ -134,7 +134,7 @@ export default function DateRangePicker({ villaId, checkIn, checkOut, onChange, 
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
           <p className="font-semibold">Tonight is not available</p>
           <p>It is too late to check in today, or tonight is already booked. The earliest night is tomorrow.</p>
-          {otherModes.length > 0 && <p className="mt-1">Want something today? <button type="button" className="font-semibold underline cursor-pointer" onClick={() => onSwitchMode(otherModes[0])}>Try {otherModes.map((m) => (m === 'dayUse' ? 'Day use' : 'an hourly slot')).join(' or ')}</button>.</p>}
+          {otherModes.length > 0 && <p className="mt-1">Want something today? <button type="button" className="font-semibold underline cursor-pointer" onClick={() => onSwitchMode(otherModes[0])}>Try {otherModes.map((m) => MODE_LABEL[m]).join(' or ')}</button>.</p>}
         </div>
       )}
       <p className="mt-2 text-[11px]" style={{ color: C.muted }}>
