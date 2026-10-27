@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Welcome, Login, Signup, VerifyOtp } from './pages/auth/index.js'
 import { Home } from './pages/Home/index.js'
 import VillaDetails from './pages/VillaDetails/VillaDetails.jsx'
@@ -6,6 +6,7 @@ import BookingFlow from './pages/Booking/BookingFlow.jsx'
 import BookingDetail from './pages/Booking/BookingDetail.jsx'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/core/auth/auth.store.js'
+import { hasSeenWelcome, setPostLoginPath } from '@/core/auth/welcome.js'
 import { useWishlist } from '@/core/wishlist/wishlist.store.js'
 import Wishlist from './pages/Wishlist/Wishlist.jsx'
 import Profile from './pages/Profile/Profile.jsx'
@@ -27,31 +28,48 @@ import Security from './pages/Profile/Security.jsx'
 
 function AuthRedirect() {
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
-  return <Navigate to={isDesktop ? "/auth/login" : "/auth/welcome"} replace />
+  const showWelcome = !isDesktop && !hasSeenWelcome()
+  return <Navigate to={showWelcome ? "/auth/welcome" : "/auth/login"} replace />
 }
 
-// Pages for signed-in guests; everyone else goes to the auth screens
-function RequireUser({ children }) {
+// Keeps the saved-villa list in step with the sign-in state
+function useWishlistSync() {
   const signedIn = useAuthStore((s) => Boolean(s.token) && s.role === 'user')
   useEffect(() => {
     if (signedIn) useWishlist.getState().load()
     else useWishlist.getState().clear()
   }, [signedIn])
-  return signedIn ? children : <AuthRedirect />
+  return signedIn
+}
+
+// Browsing (home, search, villa details...) is open to everyone
+function Public({ children }) {
+  useWishlistSync()
+  return children
+}
+
+// Booking and account pages need a signed-in guest; everyone else goes to the auth screens and
+// comes back here after logging in
+function RequireUser({ children }) {
+  const signedIn = useWishlistSync()
+  const { pathname, search } = useLocation()
+  if (signedIn) return children
+  setPostLoginPath(pathname + search)
+  return <AuthRedirect />
 }
 
 export default function UserRoutes() {
   return (
     <Routes>
-      <Route index element={<RequireUser><Home /></RequireUser>} />
-      <Route path="villas" element={<RequireUser><VillaSearch /></RequireUser>} />
-      <Route path="destinations" element={<RequireUser><Destinations /></RequireUser>} />
-      <Route path="offers" element={<RequireUser><Offers /></RequireUser>} />
+      <Route index element={<Public><Home /></Public>} />
+      <Route path="villas" element={<Public><VillaSearch /></Public>} />
+      <Route path="destinations" element={<Public><Destinations /></Public>} />
+      <Route path="offers" element={<Public><Offers /></Public>} />
       <Route path="notifications" element={<RequireUser><Notifications /></RequireUser>} />
       <Route path="support" element={<RequireUser><Support /></RequireUser>} />
       <Route path="bookings" element={<RequireUser><Bookings /></RequireUser>} />
       <Route path="bookings/:id" element={<RequireUser><BookingDetail /></RequireUser>} />
-      <Route path="villas/:id" element={<RequireUser><VillaDetails /></RequireUser>} />
+      <Route path="villas/:id" element={<Public><VillaDetails /></Public>} />
       <Route path="wishlist" element={<RequireUser><Wishlist /></RequireUser>} />
       <Route path="profile" element={<RequireUser><Profile /></RequireUser>} />
       <Route path="profile/personal" element={<RequireUser><PersonalInfo /></RequireUser>} />
@@ -61,7 +79,7 @@ export default function UserRoutes() {
       <Route path="profile/billing" element={<RequireUser><BillingId /></RequireUser>} />
       <Route path="profile/notifications" element={<RequireUser><Preferences /></RequireUser>} />
       <Route path="profile/security" element={<RequireUser><Security /></RequireUser>} />
-      <Route path="pages/:key" element={<RequireUser><ContentPage /></RequireUser>} />
+      <Route path="pages/:key" element={<Public><ContentPage /></Public>} />
       <Route path="villas/:id/book" element={<RequireUser><BookingFlow /></RequireUser>} />
 
       {/* User Auth Routes */}

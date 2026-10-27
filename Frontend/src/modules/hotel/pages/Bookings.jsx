@@ -7,6 +7,7 @@ import { ownerAPI } from '../services/ownerAPI.js'
 import { MODE_LABEL, formatPaise, slotText, timeLeft } from '@/shared/utils/booking.js'
 
 const TABS = [
+  { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending requests' },
   { key: 'awaiting', label: 'Awaiting payment' },
   { key: 'confirmed', label: 'Confirmed' },
@@ -14,7 +15,6 @@ const TABS = [
   { key: 'inhouse', label: 'In house' },
   { key: 'past', label: 'Completed' },
   { key: 'cancelled', label: 'Cancelled & rejected' },
-  { key: 'all', label: 'All' },
 ]
 
 export default function Bookings() {

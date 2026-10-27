@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useAsync } from '../components/useAsync.js'
 import { Card, Empty, ErrorBox, Field, Input, PageTitle, Pager, Pill, Select, Spinner, Stat } from '../components/ui.jsx'
 import { ownerAPI } from '../services/ownerAPI.js'
@@ -11,6 +12,9 @@ export default function Earnings() {
   const [page, setPage] = useState(1)
   const villas = useAsync(() => ownerAPI.villas(), [])
   const { data: d, error, loading, reload } = useAsync(() => ownerAPI.earnings({ villa: villa || undefined, from, to, page }), [villa, from, to, page])
+  // Day-by-day totals for the chart come from the dashboard endpoint, for the same villa and dates
+  const daily = useAsync(() => ownerAPI.dashboard({ villa: villa || undefined, from, to }), [villa, from, to])
+  const series = daily.data?.series || []
 
   return (
     <>
@@ -32,6 +36,22 @@ export default function Earnings() {
             <Stat label="Guests paid" value={formatPaise(d.summary.grossPaise)} />
             <Stat label="Fees & GST on fees" value={formatPaise(d.summary.commissionPaise)} />
           </div>
+          <Card title="Earnings by day">
+            {series.length === 0 ? <p className="text-sm text-slate-500">No confirmed bookings in this period yet.</p> : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={series.map((s) => ({ ...s, rupees: s.earningsPaise / 100 }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} fontSize={12} />
+                    <YAxis fontSize={12} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)} />
+                    <Tooltip formatter={(v) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Earnings']} labelFormatter={(l) => l} />
+                    <Bar dataKey="rupees" fill="#0284c7" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Card>
+
           <p className="rounded-lg bg-sky-50 p-3 text-sm text-sky-800">Money becomes yours once the guest has checked out. OviStays pays it to your bank account in regular payouts; the admin team records each payout.</p>
           {d.items.length === 0 ? <Empty title="No earnings in this period" /> : (
             <Card>

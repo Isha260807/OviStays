@@ -81,8 +81,8 @@ export const resources = {
   locations: {
     model: Location,
     searchFields: ['refId', 'city', 'state'],
-    createFields: ['city', 'state'],
-    updateFields: ['city', 'state', 'status'],
+    createFields: ['city', 'state', 'image'],
+    updateFields: ['city', 'state', 'image', 'status'],
     optionLabel: (d) => d.city,
     optionValue: (d) => d.city,
     decorate: async (docs) => {

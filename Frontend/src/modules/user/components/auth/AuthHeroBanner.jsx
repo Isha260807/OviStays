@@ -20,12 +20,12 @@ export default function AuthHeroBanner({
   }
 
   return (
-    <div className="relative w-full h-[210px] shrink-0 overflow-hidden select-none">
+    <div className="relative w-full h-[clamp(215px,32dvh,300px)] shrink-0 overflow-hidden select-none">
       {/* Background Villa Image */}
       <img
         src={imageUrl || '/assets/auth/hotel_hero.jpg'}
         alt="OviStays Luxury Villa"
-        className="w-full h-full object-cover object-center"
+        className="block w-full h-full object-cover object-center"
       />
 
       {/* Subtle Top & Center Dark Gradient for text readability */}
@@ -44,11 +44,11 @@ export default function AuthHeroBanner({
       )}
 
       {/* Hero Typography Overlay */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-center px-6 pt-2 pb-10 text-white pointer-events-none">
-        <h1 className="font-serif-display text-2xl sm:text-[1.65rem] font-bold leading-tight drop-shadow-md">
+      <div className="absolute inset-0 z-10 flex flex-col justify-center px-[clamp(1rem,6vw,2rem)] pt-2 pb-[clamp(1.75rem,6dvh,2.5rem)] text-white pointer-events-none">
+        <h1 className="font-serif-display text-[clamp(1.35rem,6.5vw,1.65rem)] font-bold leading-tight drop-shadow-md">
           {tagline}
         </h1>
-        <p className="mt-2 text-xs sm:text-sm text-white/90 max-w-[270px] leading-relaxed drop-shadow">
+        <p className="mt-2 text-xs sm:text-sm text-white/90 max-w-[17rem] leading-snug sm:leading-relaxed drop-shadow">
           {subtagline}
         </p>
       </div>
@@ -60,7 +60,7 @@ export default function AuthHeroBanner({
         preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M0,28 C80,44 140,48 220,32 C300,16 370,12 440,28 L440,48 L0,48 Z" />
+        <path d="M0,28 C80,44 140,48 220,32 C300,16 370,12 440,28 L440,48 L0,48 Z" fill="#ffffff" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
       </svg>
     </div>
   )

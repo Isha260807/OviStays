@@ -17,12 +17,14 @@ export default function App() {
   }, [])
 
   return (
-    <Suspense fallback={null}>
+    <div className="app-content-protected">
+      <Suspense fallback={null}>
       <Routes>
         {moduleRoutes.map((r) => (
           <Route key={r.path} path={r.path} element={r.element} />
         ))}
       </Routes>
-    </Suspense>
+      </Suspense>
+    </div>
   )
 }

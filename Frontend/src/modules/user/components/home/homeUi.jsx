@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Heart, Star } from 'lucide-react'
 import { useWishlist } from '@/core/wishlist/wishlist.store.js'
+import { useAuthStore } from '@/core/auth/auth.store.js'
+import { setPostLoginPath } from '@/core/auth/welcome.js'
 
 // Home page palette: same blue theme as the auth pages (shared/styles/auth.css)
 export const C = {
@@ -42,9 +44,16 @@ export function Rail({ children, cols = 'lg:grid-cols-4' }) {
 export function HeartButton({ id, className = '' }) {
   const on = useWishlist((s) => s.ids.includes(id))
   const toggleWish = useWishlist((s) => s.toggle)
+  const navigate = useNavigate()
+  const signedIn = useAuthStore((s) => Boolean(s.token))
   const toggle = (e) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!signedIn) {
+      setPostLoginPath(window.location.pathname + window.location.search)
+      navigate('/auth/login')
+      return
+    }
     toggleWish(id)
   }
   return (

@@ -47,7 +47,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white flex flex-col lg:flex-row overflow-x-hidden">
+    <div className="min-h-dvh w-full bg-white flex flex-col lg:flex-row overflow-x-hidden">
       {/* Laptop / Desktop Landscape Showcase (Left Panel) */}
       <AuthLandscapePanel
         imageUrl={assets.authHeroBanner}
@@ -57,7 +57,7 @@ export default function Login() {
       />
 
       {/* Form Section (Full width on mobile, 50% width on laptop) */}
-      <div className="w-full lg:w-[50%] xl:w-[48%] min-h-screen bg-white flex flex-col justify-between lg:justify-center">
+      <div className="w-full min-w-0 lg:w-[50%] xl:w-[48%] min-h-dvh bg-white flex flex-col lg:justify-center">
         <div>
           {/* Mobile Hero Banner with Organic Wavy Curve (Visible only on mobile/tablet) */}
           <div className="lg:hidden">
@@ -68,39 +68,39 @@ export default function Login() {
             />
 
             {/* Mobile 3 Value Proposition Cards */}
-            <div className="grid grid-cols-3 gap-2 px-5 py-4 border-b border-[#E2EDF5]">
-              <div className="flex flex-col items-center text-center">
+            <div className="grid grid-cols-3 gap-2 px-[clamp(0.75rem,4vw,1.25rem)] py-[clamp(0.75rem,2.2dvh,1rem)] border-b border-[#E2EDF5]">
+              <div className="flex flex-col items-center text-center min-w-0">
                 <div className="w-10 h-10 rounded-full bg-[#DDF3FF] flex items-center justify-center text-[#168AD3] mb-1.5 shadow-xs">
                   <BedDouble className="w-4 h-4" />
                 </div>
-                <span className="text-[11px] font-semibold text-[#111111] leading-tight">
+                <span className="text-[clamp(10px,3vw,12px)] font-semibold text-[#111111] leading-tight">
                   Wide Selection
                 </span>
-                <span className="text-[9.5px] text-[#6B7280] mt-0.5 leading-tight">
+                <span className="text-[clamp(10px,2.8vw,11px)] text-[#6B7280] mt-0.5 leading-tight">
                   1000+ villas to choose from
                 </span>
               </div>
 
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center min-w-0">
                 <div className="w-10 h-10 rounded-full bg-[#DDF3FF] flex items-center justify-center text-[#168AD3] mb-1.5 shadow-xs">
                   <Tag className="w-4 h-4" />
                 </div>
-                <span className="text-[11px] font-semibold text-[#111111] leading-tight">
+                <span className="text-[clamp(10px,3vw,12px)] font-semibold text-[#111111] leading-tight">
                   Best Price
                 </span>
-                <span className="text-[9.5px] text-[#6B7280] mt-0.5 leading-tight">
+                <span className="text-[clamp(10px,2.8vw,11px)] text-[#6B7280] mt-0.5 leading-tight">
                   Guaranteed deals
                 </span>
               </div>
 
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center min-w-0">
                 <div className="w-10 h-10 rounded-full bg-[#DDF3FF] flex items-center justify-center text-[#168AD3] mb-1.5 shadow-xs">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <span className="text-[11px] font-semibold text-[#111111] leading-tight">
+                <span className="text-[clamp(10px,3vw,12px)] font-semibold text-[#111111] leading-tight">
                   Secure Booking
                 </span>
-                <span className="text-[9.5px] text-[#6B7280] mt-0.5 leading-tight">
+                <span className="text-[clamp(10px,2.8vw,11px)] text-[#6B7280] mt-0.5 leading-tight">
                   Data always safe
                 </span>
               </div>
@@ -108,7 +108,7 @@ export default function Login() {
           </div>
 
           {/* Form Content (Centered and Spacious on Laptop) */}
-          <div className="w-full max-w-md mx-auto px-6 sm:px-8 pt-6 lg:pt-16 pb-4">
+          <div className="w-full max-w-md mx-auto px-[clamp(1.25rem,6vw,2rem)] pt-[clamp(1rem,3dvh,1.5rem)] lg:pt-16 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             {/* Desktop Brand Logo indicator */}
             <div className="hidden lg:flex items-center gap-2 mb-8">
               <div className="w-8 h-8 rounded-lg bg-[#55B8F5] text-white font-bold flex items-center justify-center text-sm shadow-md shadow-[#55B8F5]/30">
@@ -139,11 +139,12 @@ export default function Login() {
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="auth-input-wrapper">
                 {/* Country Code Selector */}
-                <div className="flex items-center pl-3.5 pr-2 py-2 border-r border-[#E2EDF5] text-xs font-semibold text-[#111111] select-none">
+                <div className="flex items-center self-stretch shrink-0 pl-3.5 pr-2 border-r border-[#E2EDF5] text-xs font-semibold text-[#111111] select-none">
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="bg-transparent outline-none cursor-pointer pr-1 text-xs font-semibold text-[#111111]"
+                    aria-label="Country code"
+                    className="bg-transparent outline-none cursor-pointer h-full min-h-12 pr-1 text-base sm:text-sm font-semibold text-[#111111]"
                   >
                     <option value="+91">+91</option>
                     <option value="+1">+1</option>

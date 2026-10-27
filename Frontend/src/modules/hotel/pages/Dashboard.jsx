@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useAsync } from '../components/useAsync.js'
 import { Card, Empty, ErrorBox, Field, Input, PageTitle, Select, Spinner, Stat } from '../components/ui.jsx'
 import { ownerAPI } from '../services/ownerAPI.js'
@@ -66,22 +65,6 @@ export default function Dashboard() {
             <Stat label="Pending requests" value={d.now.pendingRequests} tone={d.now.pendingRequests ? 'warn' : undefined} sub={`${d.now.awaitingPayment} awaiting payment`} />
             <Stat label="Arriving in 7 days" value={d.now.arrivingNext7Days} sub={`${d.now.inHouse} guests in house`} />
           </div>
-
-          <Card title="Earnings by day">
-            {d.series.length === 0 ? <p className="text-sm text-slate-500">No confirmed bookings in this period yet.</p> : (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={d.series.map((s) => ({ ...s, rupees: s.earningsPaise / 100 }))}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} fontSize={12} />
-                    <YAxis fontSize={12} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)} />
-                    <Tooltip formatter={(v) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Earnings']} labelFormatter={(l) => l} />
-                    <Bar dataKey="rupees" fill="#0284c7" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </Card>
 
           <div className="grid gap-5 lg:grid-cols-2">
             <PeopleList title="Arriving soon" items={d.arrivals} empty="No arrivals in the next two days." />

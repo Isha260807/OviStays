@@ -6,6 +6,7 @@ import AuthHeroBanner from '../../components/auth/AuthHeroBanner.jsx'
 import AuthLandscapePanel from '../../components/auth/AuthLandscapePanel.jsx'
 import api, { errorMessage } from '@/services/api/axios.js'
 import { useAuthStore } from '@/core/auth/auth.store.js'
+import { takePostLoginPath } from '@/core/auth/welcome.js'
 
 export default function VerifyOtp() {
   const location = useLocation()
@@ -96,7 +97,7 @@ export default function VerifyOtp() {
         setSuccessMsg('Logged in successfully!')
 
         setTimeout(() => {
-          navigate('/')
+          navigate(takePostLoginPath(), { replace: true })
         }, 800)
       }
     } catch (err) {

@@ -46,7 +46,7 @@ function EditProfile({ profile, onClose, onSaved }) {
     setBusy(true)
     try {
       const saved = await ownerAPI.saveProfile(form)
-      setUser({ ...useAuthStore.getState().user, name: saved.name, photo: saved.photo })
+      setUser({ ...useAuthStore.getState().user, name: saved.name, photo: saved.photo, businessName: saved.businessName })
       toast.success('Profile saved')
       onSaved()
     } catch (err) {

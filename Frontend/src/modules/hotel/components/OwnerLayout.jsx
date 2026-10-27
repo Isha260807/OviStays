@@ -37,13 +37,14 @@ const BOTTOM_UNVERIFIED = [
 
 // The shell of the owner panel. Signed-out visitors are sent to the host sign-in page.
 export default function OwnerLayout() {
-  const { token, role, user } = useAuthStore()
+  const { token, role, user, setUser } = useAuthStore()
   const location = useLocation()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [counts, setCounts] = useState({ pending: 0, unread: 0 })
   const [kyc, setKyc] = useState(null) // null until the server has told us
   const signedIn = Boolean(token) && role === 'hotel'
+  const businessName = user?.businessName?.trim() || 'OviStays Host'
 
   useEffect(() => setOpen(false), [location.pathname])
 
@@ -55,6 +56,7 @@ export default function OwnerLayout() {
   useEffect(() => {
     if (!signedIn) return
     ownerAPI.me().then((me) => {
+      setUser({ ...useAuthStore.getState().user, businessName: me.businessName || '' })
       setKyc(me.kycStatus)
       if (me.kycStatus !== 'Verified') return ownerAPI.unreadCount().then((n) => setCounts({ pending: 0, unread: n.count }))
       return Promise.all([ownerAPI.bookings({ tab: 'pending', limit: 1 }), ownerAPI.unreadCount()]).then(([b, n]) => setCounts({ pending: b.pendingRequests, unread: n.count }))
@@ -79,7 +81,7 @@ export default function OwnerLayout() {
   const sidebar = (
     <nav className="flex h-full flex-col bg-white">
       <div className="flex items-center justify-between px-5 py-5">
-        <Link to="/hotel" className="text-lg font-bold text-sky-700">OviStays <span className="text-slate-400 font-medium">Host</span></Link>
+        <Link to="/hotel" className="max-w-full truncate text-lg font-bold text-sky-700">{businessName}</Link>
         <button type="button" className="lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X className="w-5 h-5" /></button>
       </div>
       <ul className="flex-1 space-y-0.5 overflow-y-auto px-3">
@@ -113,7 +115,7 @@ export default function OwnerLayout() {
       <div className="lg:pl-64">
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
           <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="cursor-pointer"><Menu className="w-6 h-6" /></button>
-          <span className="font-bold text-sky-700">OviStays Host</span>
+          <span className="min-w-0 truncate font-bold text-sky-700">{businessName}</span>
           <button type="button" onClick={() => setSound(!sound)} aria-label={sound ? 'Turn alert sound off' : 'Turn alert sound on'} className="ml-auto cursor-pointer text-slate-600">{sound ? <Volume2 className="w-5 h-5 text-sky-700" /> : <VolumeX className="w-5 h-5 text-slate-400" />}</button>
           <Link to="/hotel/notifications" className="relative" aria-label="Notifications"><Bell className="w-5 h-5" />{counts.unread > 0 && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-500" />}</Link>
         </header>

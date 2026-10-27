@@ -61,7 +61,7 @@ export function PageTitle({ title, subtitle, actions }) {
         <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{actions}</div>}
     </div>
   )
 }
@@ -143,7 +143,7 @@ export function Stat({ label, value, sub, tone }) {
 
 export function Tabs({ tabs, value, onChange }) {
   return (
-    <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-slate-200">
+    <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((t) => (
         <button key={t.key} type="button" role="tab" aria-selected={value === t.key} onClick={() => onChange(t.key)}
           className={cn('whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-semibold -mb-px cursor-pointer', value === t.key ? 'border-sky-600 text-sky-700' : 'border-transparent text-slate-500 hover:text-slate-800')}>

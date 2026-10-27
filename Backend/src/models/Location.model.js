@@ -5,6 +5,7 @@ const locationSchema = new mongoose.Schema(
   {
     city: { type: String, required: true, trim: true, unique: true },
     state: { type: String, required: true, trim: true },
+    image: { type: String, trim: true, default: '' },
     status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
   },
   { timestamps: true }

@@ -84,11 +84,12 @@ export const listConfigs = {
   },
   locations: {
     title: "Locations", subtitle: "Cities where OviStays operates", endpoint: "locations",
-    columns: [ID, t("city", "City"), t("state", "State"), t("hotels", "Hotels"), STATUS],
+    columns: [ID, t("image", "Image", "image"), t("city", "City"), t("state", "State"), t("hotels", "Hotels"), STATUS],
     statusOptions: ACTIVE, statusEditable: true, addLabel: "Add Location",
     addFields: [
       { name: "city", label: "City", required: true },
       { name: "state", label: "State", required: true },
+      { name: "image", label: "Location image (shown on the app home page)", type: "image", preset: "misc", full: true },
     ],
   },
 

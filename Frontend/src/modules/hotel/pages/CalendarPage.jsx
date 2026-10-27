@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Lock, Plus, Trash2 } from 'lucide-react'
+import { ArrowRight, CalendarCheck, ChevronLeft, ChevronRight, Lock, Plus, Trash2, Users, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/services/api/axios.js'
 import { useAsync } from '../components/useAsync.js'
@@ -32,6 +32,72 @@ function minutesOn(iso, day, edge) {
   if (d > day) return 1440
   const [h, m] = localTimeOf(iso).split(':').map(Number)
   return edge === 'end' && h === 0 && m === 0 ? 1440 : h * 60 + m
+}
+
+const ENTRY = {
+  owner_block: { pill: 'gray', pillText: 'Blocked by you', bar: 'border-l-slate-400' },
+  hold: { pill: 'amber', pillText: 'On hold', bar: 'border-l-amber-400' },
+  booking: { pill: 'blue', pillText: 'Booked', bar: 'border-l-sky-500' },
+}
+
+function Row({ icon: Icon, label, children }) {
+  return (
+    <div className="flex items-start gap-2.5 text-sm">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+      <div className="min-w-0"><p className="text-[11px] uppercase tracking-wide text-slate-400">{label}</p><div className="text-slate-800">{children}</div></div>
+    </div>
+  )
+}
+
+// What is happening on the picked day: the night rate and every booking, hold or block that touches it
+function DayDetails({ day, night, items, onUnblock }) {
+  const past = day < todayStr()
+  const kind = (b) => (b.type === 'owner_block' ? 'owner_block' : b.type === 'hold' ? 'hold' : 'booking')
+  return (
+    <Card title={dayLabel(day)} action={night && !past && <span className="text-right leading-tight"><span className="block text-[10px] uppercase tracking-wide text-slate-400">Rate / night</span><span className="text-sm font-semibold">{formatPaise(night.pricePaise)}</span></span>}>
+      {items.length === 0 ? (
+        <div className="rounded-lg bg-slate-50 px-4 py-5 text-center">
+          <CalendarCheck className="mx-auto h-6 w-6 text-slate-300" />
+          <p className="mt-2 text-sm font-medium text-slate-700">{past ? 'Nothing happened this day' : 'Free all day'}</p>
+          {!past && <p className="text-xs text-slate-500">Guests can book this day.</p>}
+        </div>
+      ) : (
+        <>
+          <p className="mb-2 text-xs text-slate-500">{items.length} {items.length > 1 ? 'entries' : 'entry'} on this day</p>
+          <ul className="space-y-2.5">
+            {items.map((b) => {
+              const e = ENTRY[kind(b)]
+              return (
+                <li key={b.id} className={`rounded-lg border border-l-4 border-slate-200 ${e.bar} p-3`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-semibold text-slate-900">{blockLabel(b)}</span>
+                    <Pill tone={e.pill}>{e.pillText}</Pill>
+                  </div>
+                  <div className="mt-2.5 space-y-2">
+                    <Row icon={CalendarCheck} label="Stay">
+                      {fullDate(localDateOf(b.startAt))}, {timeOnly(b.startAt)}<ArrowRight className="mx-1 inline h-3 w-3 text-slate-400" />{fullDate(localDateOf(b.endAt))}, {timeOnly(b.endAt)}
+                    </Row>
+                    {b.booking && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Row icon={Users} label="Guests">{b.booking.guests} {b.booking.guests === 1 ? 'guest' : 'guests'}</Row>
+                        <Row icon={Wallet} label="Guest paid">{formatPaise(b.booking.totalPaise)}</Row>
+                      </div>
+                    )}
+                  </div>
+                  {b.booking && (
+                    <Link to={`/hotel/bookings/${b.booking.id}`} className="mt-2.5 flex items-center justify-between rounded-lg bg-sky-50 px-3 py-1.5 text-sm font-semibold text-sky-700 hover:bg-sky-100">
+                      <span>View booking {b.booking.code}</span><ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
+                  {b.type === 'owner_block' && <Btn size="sm" variant="ghost" className="mt-2 !text-red-600" onClick={() => onUnblock(b.id)}><Trash2 className="w-3.5 h-3.5" /> Unblock</Btn>}
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
+    </Card>
+  )
 }
 
 function DayColumn({ day, blocks, onPick }) {
@@ -183,15 +249,15 @@ export default function CalendarPage() {
     <>
       <PageTitle title="Calendar & pricing" subtitle="One calendar per villa. Night stays, day use and hourly slots all share it."
         actions={(
-          <>
-            <Select value={villaId} onChange={(e) => setParams({ villa: e.target.value })} aria-label="Villa" className="min-w-48">{(villas.data || []).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</Select>
-            <Btn onClick={() => setBlocking(true)}><Lock className="w-4 h-4" /> Block time</Btn>
-          </>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Select value={villaId} onChange={(e) => setParams({ villa: e.target.value })} aria-label="Villa" className="min-w-0 flex-1 sm:min-w-48 sm:flex-none">{(villas.data || []).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</Select>
+            <Btn className="shrink-0 whitespace-nowrap" onClick={() => setBlocking(true)}><Lock className="w-4 h-4" /> Block time</Btn>
+          </div>
         )} />
       {cal.error && <ErrorBox message={cal.error} onRetry={cal.reload} />}
 
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-slate-200 bg-white px-3 pt-3 shadow-sm">
+        <div className="flex items-center gap-2 pb-3">
           <Btn variant="outline" size="sm" aria-label="Previous" onClick={() => step(-1)}><ChevronLeft className="w-4 h-4" /></Btn>
           <Btn variant="outline" size="sm" onClick={() => { setAnchor(todayStr()); setSelected(todayStr()) }}>Today</Btn>
           <Btn variant="outline" size="sm" aria-label="Next" onClick={() => step(1)}><ChevronRight className="w-4 h-4" /></Btn>
@@ -199,7 +265,7 @@ export default function CalendarPage() {
         </div>
         <Tabs tabs={VIEWS} value={view} onChange={(v) => { setView(v); if (v !== 'month') setAnchor(selected) }} />
       </div>
-      <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-600">
+      <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-sm">
         {[['bg-white border border-slate-300', 'Available'], ['bg-amber-100', 'On hold (payment/approval pending)'], ['bg-sky-100', 'Booked'], ['bg-slate-200', 'Blocked by you']].map(([c, l]) => <span key={l} className="flex items-center gap-1.5"><i className={`inline-block h-3 w-3 rounded ${c}`} />{l}</span>)}
       </div>
 
@@ -245,21 +311,7 @@ export default function CalendarPage() {
         </div>
 
         <aside className="space-y-4">
-          <Card title={dayLabel(selected)} action={nightBy[selected] && <span className="text-sm font-semibold">{formatPaise(nightBy[selected].pricePaise)}</span>}>
-            {selBlocks.length === 0 ? <p className="text-sm text-slate-500">{selected < todayStr() ? 'Nothing happened this day.' : 'Free all day. Guests can book it.'}</p> : (
-              <ul className="space-y-3">
-                {selBlocks.map((b) => (
-                  <li key={b.id} className="rounded-lg border border-slate-200 p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2"><span className="font-semibold">{blockLabel(b)}</span><Pill tone={b.type === 'owner_block' ? 'gray' : b.type === 'hold' ? 'amber' : 'blue'}>{b.type === 'owner_block' ? 'Blocked' : b.type === 'hold' ? 'On hold' : 'Booked'}</Pill></div>
-                    <p className="mt-1 text-xs text-slate-500">{fullDate(localDateOf(b.startAt))} {timeOnly(b.startAt)} → {fullDate(localDateOf(b.endAt))} {timeOnly(b.endAt)}</p>
-                    {b.booking && <p className="mt-1 text-xs text-slate-600">{b.booking.guests} guests · {formatPaise(b.booking.totalPaise)} · <Link className="font-semibold text-sky-700" to={`/hotel/bookings/${b.booking.id}`}>{b.booking.code}</Link></p>}
-                    {b.type === 'owner_block' && <Btn size="sm" variant="ghost" className="mt-2 !text-red-600" onClick={() => unblock(b.id)}><Trash2 className="w-3.5 h-3.5" /> Unblock</Btn>}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {selected >= todayStr() && <Btn size="sm" variant="outline" className="mt-3 w-full" onClick={() => setBlocking(true)}><Lock className="w-3.5 h-3.5" /> Block from this day</Btn>}
-          </Card>
+          <DayDetails day={selected} night={nightBy[selected]} items={selBlocks} onUnblock={unblock} />
           {villa && <p className="text-xs text-slate-500">Showing <b>{villa.name}</b>. Times are in India time.</p>}
         </aside>
       </div>

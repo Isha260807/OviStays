@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, Phone, UserPlus, ChevronLeft } from 'lucide-react'
+import { User, Phone, Mail, UserPlus, ChevronLeft } from 'lucide-react'
 import { useAuthAssets } from '../../hooks/useAuthAssets.js'
 import AuthHeroBanner from '../../components/auth/AuthHeroBanner.jsx'
 import AuthLandscapePanel from '../../components/auth/AuthLandscapePanel.jsx'
@@ -13,9 +13,10 @@ export default function Signup() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
     agreeTerms: false,
   })
-  const [countryCode, setCountryCode] = useState('+91')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -42,6 +43,12 @@ export default function Signup() {
       return
     }
 
+    const email = formData.email.trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
     if (!formData.agreeTerms) {
       setError('Please accept the Terms & Conditions and Privacy Policy to continue')
       return
@@ -49,10 +56,11 @@ export default function Signup() {
 
     setLoading(true)
     try {
-      const fullPhone = `${countryCode} ${cleanPhone}`
+      const fullPhone = `+91 ${cleanPhone}`
       const response = await api.post('/user/auth/register', {
         name: formData.name.trim(),
         phone: fullPhone,
+        email: email || undefined,
         acceptTerms: true,
       })
 
@@ -82,8 +90,8 @@ export default function Signup() {
       />
 
       {/* Form Section (Full width on mobile, 50% width on laptop) */}
-      <div className="w-full lg:w-[50%] xl:w-[48%] min-h-screen bg-white flex flex-col justify-between">
-        <div>
+      <div className="w-full lg:w-[50%] xl:w-[48%] min-h-screen min-h-dvh bg-white flex flex-col justify-between">
+        <div className="flex min-h-screen min-h-dvh flex-col">
           {/* Mobile Hero Banner (Visible only on mobile/tablet) */}
           <div className="lg:hidden">
             <AuthHeroBanner
@@ -96,9 +104,9 @@ export default function Signup() {
           </div>
 
           {/* Form Content (Centered and Spacious on Laptop) */}
-          <div className="w-full max-w-md mx-auto px-6 sm:px-8 pt-4 lg:pt-10 pb-4">
+          <div className="w-full max-w-md mx-auto flex flex-1 flex-col gap-[clamp(0.75rem,2.2dvh,1.25rem)] px-[clamp(1.25rem,6vw,2rem)] pt-[clamp(0.5rem,2dvh,1rem)] lg:pt-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             {/* Desktop Back Button & Brand Logo */}
-            <div className="hidden lg:flex items-center justify-between mb-6">
+            <div className="hidden lg:flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => navigate('/auth/login')}
@@ -119,12 +127,12 @@ export default function Signup() {
             </div>
 
             {/* Circular Primary Badge in #55B8F5 */}
-            <div className="auth-header-badge">
-              <UserPlus className="w-5 h-5 text-white" />
+            <div className="auth-header-badge !w-10 !h-10 !mb-0 !shrink-0 sm:!w-[52px] sm:!h-[52px]">
+              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
 
             {/* Header Titles */}
-            <div className="text-center mb-4">
+            <div className="text-center">
               <h2 className="font-serif-display text-2xl sm:text-3xl font-bold text-[#111111]">
                 Create Account
               </h2>
@@ -134,13 +142,13 @@ export default function Signup() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-[#DC2626]/30 text-[#DC2626] text-xs text-center font-medium">
+              <div className="p-3 rounded-xl bg-red-50 border border-[#DC2626]/30 text-[#DC2626] text-xs text-center font-medium">
                 {error}
               </div>
             )}
 
             {/* Signup Form */}
-            <form onSubmit={handleSignup} className="space-y-3.5">
+            <form onSubmit={handleSignup} className="flex flex-col gap-[clamp(0.625rem,1.8dvh,0.875rem)]">
               {/* Full Name */}
               <div className="auth-input-wrapper">
                 <div className="pl-3.5 text-[#6B7280]">
@@ -152,24 +160,16 @@ export default function Signup() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Full Name"
-                  className="auth-input pl-2.5"
+                  className="auth-input !py-1.5 sm:!py-[0.85rem] pl-2.5"
                   required
                 />
               </div>
 
               {/* Mobile Number */}
               <div className="auth-input-wrapper">
-                <div className="flex items-center pl-3 pr-2 py-2 border-r border-[#E2EDF5] text-xs font-semibold text-[#111111] select-none">
+                <div className="flex items-center pl-3 pr-2 py-1.5 sm:py-2 border-r border-[#E2EDF5] text-xs font-semibold text-[#111111] select-none">
                   <Phone className="w-3.5 h-3.5 text-[#6B7280] mr-1.5" />
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="bg-transparent outline-none cursor-pointer pr-0.5 text-xs font-semibold text-[#111111]"
-                  >
-                    <option value="+91">+91</option>
-                    <option value="+1">+1</option>
-                    <option value="+44">+44</option>
-                  </select>
+                  <span aria-label="Country code">+91</span>
                 </div>
                 <input
                   type="tel"
@@ -178,13 +178,28 @@ export default function Signup() {
                   onChange={handleChange}
                   placeholder="Mobile Number"
                   maxLength={12}
-                  className="auth-input"
+                  className="auth-input !py-1.5 sm:!py-[0.85rem]"
                   required
                 />
               </div>
 
+
+              {/* Optional Email */}
+              <div className="auth-input-wrapper">
+                <div className="pl-3.5 text-[#6B7280]">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email Address (Optional)"
+                  className="auth-input !py-1.5 sm:!py-[0.85rem] pl-2.5"
+                />
+              </div>
               {/* Terms and Privacy Checkbox */}
-              <div className="flex items-start gap-2.5 pt-1">
+              <div className="flex items-start gap-2.5">
                 <input
                   type="checkbox"
                   id="agreeTerms"
@@ -212,14 +227,14 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-luxury-primary mt-2"
+                className="btn-luxury-primary !py-2.5 sm:!py-[0.95rem]"
               >
                 <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
               </button>
             </form>
 
             {/* Link to Sign In */}
-            <p className="mt-3 text-center text-xs text-[#6B7280]">
+            <p className="text-center text-xs text-[#6B7280]">
               Already have an account?{' '}
               <Link
                 to="/auth/login"

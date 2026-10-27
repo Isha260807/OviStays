@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CalendarDays, ClipboardList, Eye, MapPin, Pencil, Plus } from 'lucide-react'
+import { CalendarDays, ClipboardList, MapPin, Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/services/api/axios.js'
 import { assetUrl } from '@/services/api/config.js'
@@ -54,7 +54,6 @@ function VillaCard({ v, onChanged }) {
           <Btn size="sm" variant="outline" onClick={() => navigate(`/hotel/villas/${v.id}`)} disabled={v.listingStatus === 'Suspended'}><Pencil className="w-3.5 h-3.5" /> Edit</Btn>
           <Btn size="sm" variant="outline" onClick={() => navigate(`/hotel/calendar?villa=${v.id}`)}><CalendarDays className="w-3.5 h-3.5" /> Calendar</Btn>
           <Btn size="sm" variant="outline" onClick={() => navigate(`/hotel/bookings?villa=${v.id}`)}><ClipboardList className="w-3.5 h-3.5" /> Bookings</Btn>
-          {v.listingStatus === 'Approved' && <a href={`/villas/${v.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"><Eye className="w-3.5 h-3.5" /> View live</a>}
         </div>
         <div className="flex flex-wrap gap-2">
           {['Draft', 'Rejected'].includes(v.listingStatus) && <Btn size="sm" loading={busy} onClick={submit}>Submit for approval</Btn>}

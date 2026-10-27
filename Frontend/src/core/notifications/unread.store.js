@@ -13,6 +13,7 @@ export const useUnread = create((set, get) => ({
   loadedAt: 0,
 
   load: async ({ force = false } = {}) => {
+    if (!useAuthStore.getState().token) return
     if (!force && Date.now() - get().loadedAt < FRESH_MS) return
     inFlight ||= api.get('/user/notifications/unread-count')
       .then((res) => set({ count: res.data.data.unread, loadedAt: Date.now() }))

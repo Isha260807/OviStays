@@ -1,4 +1,5 @@
 import HomePage from '../../../models/HomePage.model.js'
+import Location from '../../../models/Location.model.js'
 import Hotel from '../../../models/Hotel.model.js'
 import Banner from '../../../models/Banner.model.js'
 import Coupon from '../../../models/Coupon.model.js'
@@ -27,7 +28,6 @@ async function hotelsByIds(idList) {
 }
 
 // "Hill Stations" -> "hill-stations"
-const slug = (text) => String(text).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 const discountText = (c) => (c.discountType === 'percent' ? `${c.discountValue}%` : `₹${Number(c.discountValue).toLocaleString('en-IN')}`)
 
@@ -104,12 +104,21 @@ async function resolveSection(s) {
     }
 
     case 'categories': {
-      const list = (s.categories || []).filter((c) => c.label && c.image)
-      if (!list.length) return null
-      return {
-        ...base,
-        categories: list.map((c) => ({ label: c.label, image: c.image, to: slug(c.label) ? `/villas?type=${slug(c.label)}` : '/villas' })),
-      }
+      // Round tiles are the locations the admin added, with the photo the admin uploaded; without one
+      // the best-rated active villa in the city lends its cover photo, and a city with neither is skipped
+      const [locations, rows] = await Promise.all([
+        Location.find({ status: 'Active' }).sort({ createdAt: 1 }).lean(),
+        Hotel.aggregate([
+          { $match: { status: 'Active', coverImage: { $nin: ['', null] } } },
+          { $sort: { rating: -1 } },
+          { $group: { _id: { $toLower: '$city' }, image: { $first: '$coverImage' } } },
+        ]),
+      ])
+      const imageOf = new Map(rows.map((r) => [r._id, r.image]))
+      const list = locations
+        .map((l) => ({ label: l.city, image: l.image || imageOf.get(l.city.toLowerCase()), to: `/villas?city=${encodeURIComponent(l.city)}` }))
+        .filter((l) => l.image)
+      return list.length ? { ...base, categories: list } : null
     }
 
     default:

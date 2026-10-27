@@ -6,9 +6,19 @@ import { errorMessage } from '@/services/api/axios.js'
 import { assetUrl } from '@/services/api/config.js'
 import { uploadImage, IMAGE_TYPES, MAX_IMAGE_MB } from '@/services/api/uploads.js'
 import { useAsync } from '../components/useAsync.js'
-import { Btn, Card, ErrorBox, Field, Input, PageTitle, Pill, Select, Spinner, Textarea } from '../components/ui.jsx'
+import { Btn, Card, ErrorBox, Field, Input, PageTitle, Pill, Select, Spinner, Tabs, Textarea } from '../components/ui.jsx'
 import { ownerAPI } from '../services/ownerAPI.js'
 import { toPaise, toRupees } from '@/shared/utils/booking.js'
+
+// The form is long, so it is shown one section at a time
+const SECTIONS = [
+  { key: 'basics', label: 'Basics' },
+  { key: 'location', label: 'Location' },
+  { key: 'photos', label: 'Photos' },
+  { key: 'rooms', label: 'Rooms' },
+  { key: 'booking', label: 'Booking' },
+  { key: 'rules', label: 'Rules' },
+]
 
 const EMPTY = {
   name: '', description: '', propertyType: 'Private Villa', address: '', locality: '', city: '', state: '', country: 'India', pincode: '', mapUrl: '', geo: null,
@@ -81,6 +91,7 @@ export default function VillaForm() {
   const [saving, setSaving] = useState(false)
   const [rule, setRule] = useState('')
   const [dirty, setDirty] = useState(false)
+  const [tab, setTab] = useState('basics')
 
   const loaded = useAsync(async () => (isNew ? null : ownerAPI.villa(id)), [id])
   const amenities = useAsync(() => ownerAPI.amenities(), [])
@@ -138,6 +149,7 @@ export default function VillaForm() {
   if (loaded.error) return <ErrorBox message={loaded.error} onRetry={loaded.reload} />
 
   const m = form.bookingModes
+  const sec = (k) => (tab === k ? 'space-y-5' : 'hidden')
   const locked = form.listingStatus === 'Suspended'
   const toggleAmenity = (aid) => edit({ amenities: form.amenities.includes(aid) ? form.amenities.filter((a) => a !== aid) : [...form.amenities, aid] })
   const addRule = () => { if (rule.trim()) { edit({ houseRules: [...form.houseRules, rule.trim()] }); setRule('') } }
@@ -155,7 +167,10 @@ export default function VillaForm() {
       {locked && <div className="mb-4"><ErrorBox message="This villa is suspended. Please contact support to change it." /></div>}
       {form.listingStatus === 'Rejected' && form.rejectionReason && <div className="mb-4"><ErrorBox message={`Not approved: ${form.rejectionReason}. Fix this and submit again.`} /></div>}
 
-      <fieldset disabled={locked} className="space-y-5 pb-24">
+      <Tabs tabs={SECTIONS} value={tab} onChange={setTab} />
+
+      <fieldset disabled={locked} className="pb-24 pt-5">
+        <div className={sec('basics')}>
         <Card title="Basics">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Villa name" className="sm:col-span-2"><Input value={form.name} onChange={txt('name')} maxLength={80} required /></Field>
@@ -164,6 +179,9 @@ export default function VillaForm() {
           </div>
         </Card>
 
+        </div>
+
+        <div className={sec('location')}>
         <Card title="Location">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full address" className="sm:col-span-2"><Input value={form.address} onChange={txt('address')} maxLength={250} /></Field>
@@ -185,8 +203,14 @@ export default function VillaForm() {
           </div>
         </Card>
 
+        </div>
+
+        <div className={sec('photos')}>
         <Card title="Photos"><PhotoUploader cover={form.coverImage} gallery={form.gallery} onCover={(u) => edit({ coverImage: u })} onGallery={(fn) => setForm((f) => { setDirty(true); return { ...f, gallery: typeof fn === 'function' ? fn(f.gallery) : fn } })} /></Card>
 
+        </div>
+
+        <div className={sec('rooms')}>
         <Card title="Rooms and capacity">
           <div className="grid gap-4 sm:grid-cols-4">
             <Field label="Bedrooms"><Input type="number" min="0" value={form.bedrooms} onChange={num('bedrooms')} /></Field>
@@ -206,6 +230,9 @@ export default function VillaForm() {
           </div>
         </Card>
 
+        </div>
+
+        <div className={sec('booking')}>
         <Card title="How guests can book">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Confirmation" hint="Instant: confirmed as soon as the guest pays. Request: you accept first, then the guest pays.">
@@ -217,7 +244,7 @@ export default function VillaForm() {
         </Card>
 
         <Card title="Night stay" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.night.enabled} onChange={(e) => editMode('night', { enabled: e.target.checked })} /> Offer night stays</label>}>
-          <div className={`grid gap-4 sm:grid-cols-3 ${m.night.enabled ? '' : 'opacity-50'}`}>
+          {m.night.enabled && <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Price per night (₹)"><Money value={form.pricing.basePricePaise} onChange={(v) => editIn('pricing', { basePricePaise: v })} /></Field>
             <Field label="Fri & Sat night price (₹)" hint="Leave empty to use the normal price."><Money value={form.pricing.weekendPricePaise} onChange={(v) => editIn('pricing', { weekendPricePaise: v })} /></Field>
             <Field label="Cleaning fee (₹)" hint="Charged once per booking."><Money value={form.pricing.cleaningFeePaise} onChange={(v) => editIn('pricing', { cleaningFeePaise: v })} /></Field>
@@ -229,11 +256,11 @@ export default function VillaForm() {
             <Field label="Check-in time"><Input type="time" value={form.checkInTime} onChange={txt('checkInTime')} /></Field>
             <Field label="Check-out time"><Input type="time" value={form.checkOutTime} onChange={txt('checkOutTime')} /></Field>
             <label className="flex items-start gap-2 text-sm sm:col-span-2"><input type="checkbox" className="mt-1" checked={form.allowSameDay} onChange={(e) => edit({ allowSameDay: e.target.checked })} /><span><b>Allow same-day bookings</b><span className="block text-xs text-slate-500">If a guest books tonight after your check-in time has passed, their stay starts from the moment they book and still ends at your normal check-out time. No extra time is given. Same-day arrival must be before midnight.</span></span></label>
-          </div>
+          </div>}
         </Card>
 
         <Card title="Day use" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.dayUse.enabled} onChange={(e) => editMode('dayUse', { enabled: e.target.checked })} /> Offer day-use packages</label>}>
-          <div className={m.dayUse.enabled ? 'space-y-3' : 'space-y-3 opacity-50'}>
+          {m.dayUse.enabled && <div className="space-y-3">
             {m.dayUse.packages.map((p, i) => (
               <div key={p.id || i} className="grid items-end gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-6">
                 <Field label="Package name" className="sm:col-span-2"><Input value={p.name} maxLength={40} onChange={(e) => editMode('dayUse', { packages: m.dayUse.packages.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} /></Field>
@@ -247,11 +274,11 @@ export default function VillaForm() {
               </div>
             ))}
             <Btn variant="outline" size="sm" onClick={() => editMode('dayUse', { packages: [...m.dayUse.packages, { name: 'Day package', startTime: '10:00', endTime: '18:00', pricePaise: 0, maxGuests: 0 }] })}><Plus className="w-4 h-4" /> Add package</Btn>
-          </div>
+          </div>}
         </Card>
 
         <Card title="Hourly slots" action={<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={m.hourly.enabled} onChange={(e) => editMode('hourly', { enabled: e.target.checked })} /> Offer hourly slots</label>}>
-          <div className={m.hourly.enabled ? 'space-y-4' : 'space-y-4 opacity-50'}>
+          {m.hourly.enabled && <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Opens at"><Input type="time" value={m.hourly.openTime} onChange={(e) => editMode('hourly', { openTime: e.target.value })} /></Field>
               <Field label="Closes at"><Input type="time" value={m.hourly.closeTime} onChange={(e) => editMode('hourly', { closeTime: e.target.value })} /></Field>
@@ -261,9 +288,12 @@ export default function VillaForm() {
               <Field label="Maximum hours"><Input type="number" min="1" max="24" value={m.hourly.maxHours} onChange={(e) => editMode('hourly', { maxHours: Number(e.target.value) })} /></Field>
             </div>
             {m.hourly.pricePerHourPaise > 0 && <p className="rounded-lg bg-sky-50 p-3 text-sm text-sky-800">Example: {m.hourly.minHours} hour = ₹{(m.hourly.pricePerHourPaise * m.hourly.minHours) / 100}, {Math.min(3, m.hourly.maxHours)} hours = ₹{(m.hourly.pricePerHourPaise * Math.min(3, m.hourly.maxHours)) / 100}, {m.hourly.maxHours} hours = ₹{(m.hourly.pricePerHourPaise * m.hourly.maxHours) / 100}. Bookings must finish by {m.hourly.closeTime}.</p>}
-          </div>
+          </div>}
         </Card>
 
+        </div>
+
+        <div className={sec('rules')}>
         <Card title="House rules and cancellation">
           <ul className="mb-3 space-y-1.5">
             {form.houseRules.map((r, i) => (
@@ -276,6 +306,7 @@ export default function VillaForm() {
           </div>
           <p className="mt-4 rounded-lg bg-sky-50 p-3 text-sm text-sky-800">Refunds follow OviStays' platform cancellation policy, which guests see before they pay. If you cancel a confirmed booking, the guest is refunded in full.</p>
         </Card>
+        </div>
       </fieldset>
 
       <div className="fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:left-64">

@@ -81,6 +81,7 @@
   color: #FFFFFF;
   font-weight: 600;
   font-size: 1rem;
+  min-height: 3rem;
   padding: 0.95rem 1.5rem;
   border-radius: 9999px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -126,13 +127,23 @@
 }
 
 .auth-input {
+  flex: 1 1 0%;
   width: 100%;
+  min-width: 0;
+  min-height: 3rem;
   background: transparent;
   border: none;
   outline: none;
-  font-size: 0.95rem;
+  /* 16px on mobile prevents iOS focus-zoom */
+  font-size: 1rem;
   color: var(--color-text-title);
   padding: 0.85rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .auth-input {
+    font-size: 0.95rem;
+  }
 }
 
 .auth-input::placeholder {
@@ -198,10 +209,11 @@
 /* Wavy organic bottom mask for Hero (Mobile) */
 .hero-wavy-svg {
   position: absolute;
-  bottom: -1px;
+  bottom: 0;
   left: 0;
   width: 100%;
   height: auto;
+  display: block;
   fill: #FFFFFF;
   z-index: 10;
   pointer-events: none;

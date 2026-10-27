@@ -3,8 +3,11 @@ import {
   Bath, BedDouble, CalendarX, Camera, Check, ChevronLeft, ChevronRight, ChevronDown, Clock, ConciergeBell, CookingPot, CreditCard,
   Dumbbell, Heart, MapPin, Play, Share2, Snowflake, Sparkles, Star, Tv, Users, Utensils, Waves, Wifi, ParkingSquare, X, Map as MapIcon,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { C } from '../home/homeUi.jsx'
 import { useWishlist } from '@/core/wishlist/wishlist.store.js'
+import { useAuthStore } from '@/core/auth/auth.store.js'
+import { setPostLoginPath } from '@/core/auth/welcome.js'
 import { formatPrice } from '../../data/homeData.js'
 
 const card = 'bg-white rounded-2xl border shadow-[0_6px_20px_rgba(22,138,211,0.06)]'
@@ -32,8 +35,18 @@ export function CircleButton({ children, label, onClick, className = '' }) {
 export function WishButton({ id }) {
   const on = useWishlist((s) => s.ids.includes(id))
   const toggle = useWishlist((s) => s.toggle)
+  const navigate = useNavigate()
+  const signedIn = useAuthStore((s) => Boolean(s.token))
+  const onClick = () => {
+    if (!signedIn) {
+      setPostLoginPath(window.location.pathname + window.location.search)
+      navigate('/auth/login')
+      return
+    }
+    toggle(id)
+  }
   return (
-    <CircleButton label={on ? 'Remove from favourites' : 'Add to favourites'} onClick={() => toggle(id)}>
+    <CircleButton label={on ? 'Remove from favourites' : 'Add to favourites'} onClick={onClick}>
       <Heart className="w-5 h-5" fill={on ? C.primaryDark : 'none'} stroke={on ? C.primaryDark : 'currentColor'} />
     </CircleButton>
   )

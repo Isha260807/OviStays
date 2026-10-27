@@ -139,6 +139,7 @@ export async function register(req, res) {
   if (!name) throw badRequest('Name and phone number are required')
   const phone = readPhone(req.body)
   const email = String(req.body.email || '').trim().toLowerCase()
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw badRequest('Please enter a valid email address')
   if (req.body.acceptTerms !== true) throw badRequest('Please accept the Terms & Conditions and Privacy Policy to continue')
 
   const settings = await Settings.get()

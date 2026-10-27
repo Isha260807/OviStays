@@ -1,10 +1,18 @@
 import React, { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthAssets } from '../../hooks/useAuthAssets.js'
+import { hasSeenWelcome, markWelcomeSeen } from '@/core/auth/welcome.js'
 
 export default function Welcome() {
   const navigate = useNavigate()
   const { assets } = useAuthAssets()
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+  const seenWelcome = hasSeenWelcome()
+
+  // Once this first-visit screen has been shown, future app visits go straight to login.
+  useEffect(() => {
+    if (!isDesktop && !seenWelcome) markWelcomeSeen()
+  }, [isDesktop, seenWelcome])
 
   // Welcome page is strictly for mobile UI; on desktop/laptop redirect to login
   useEffect(() => {
@@ -17,6 +25,8 @@ export default function Welcome() {
     window.addEventListener('resize', checkViewport)
     return () => window.removeEventListener('resize', checkViewport)
   }, [navigate])
+
+  if (isDesktop || seenWelcome) return <Navigate to="/auth/login" replace />
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">

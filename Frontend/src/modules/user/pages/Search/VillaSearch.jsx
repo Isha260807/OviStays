@@ -27,21 +27,21 @@ function VillaListCard({ villa }) {
   ].filter(Boolean)
   return (
     <Link to={`/villas/${villa.id}`} className="group block bg-white rounded-2xl overflow-hidden border shadow-[0_6px_20px_rgba(22,138,211,0.08)] hover:shadow-[0_10px_28px_rgba(22,138,211,0.16)] transition-shadow" style={border}>
-      <div className="relative aspect-[4/3] overflow-hidden bg-[#DDF3FF]">
+      <div className="relative aspect-[2/1] sm:aspect-[4/3] overflow-hidden bg-[#DDF3FF]">
         {villa.image && <img src={assetUrl(villa.image)} alt={villa.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
-        <HeartButton id={villa.id} className="absolute top-3 right-3 !bg-black/30 hover:!bg-black/45" />
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold" style={{ color: C.primaryDark }}>{villa.propertyType}</span>
+        <HeartButton id={villa.id} className="absolute top-2 right-2 sm:top-3 sm:right-3 !bg-black/30 hover:!bg-black/45" />
+        <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full bg-white/90 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold" style={{ color: C.primaryDark }}>{villa.propertyType}</span>
       </div>
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-serif-display text-lg font-semibold leading-tight">{villa.name}</h3>
+          <h3 className="font-serif-display text-base sm:text-lg font-semibold leading-tight">{villa.name}</h3>
           {villa.rating > 0 && (
             <span className="flex items-center gap-1 text-sm font-semibold shrink-0"><Star className="w-4 h-4" fill="#F5A524" stroke="#F5A524" />{villa.rating}</span>
           )}
         </div>
         <p className="flex items-center gap-1 text-xs mt-1" style={{ color: C.muted }}><MapPin className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{villa.location}</span></p>
-        {specs.length > 0 && <p className="text-xs mt-2.5" style={{ color: C.muted }}>{specs.join(' · ')}</p>}
-        <p className="mt-3 text-xl font-bold" style={{ color: C.primaryDark }}>
+        {specs.length > 0 && <p className="text-xs mt-1.5 sm:mt-2.5" style={{ color: C.muted }}>{specs.join(' · ')}</p>}
+        <p className="mt-1.5 sm:mt-3 text-lg sm:text-xl font-bold" style={{ color: C.primaryDark }}>
           {villa.price ? formatPrice(villa.price) : 'Price on request'}
           {villa.price > 0 && <span className="text-xs font-normal ml-1" style={{ color: C.muted }}>/ night</span>}
         </p>
